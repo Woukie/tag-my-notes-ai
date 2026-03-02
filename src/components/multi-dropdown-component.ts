@@ -53,7 +53,7 @@ export class MultiDropdownComponent {
         this.dropdownContainer.style.backgroundColor = 'var(--background-primary)';
         this.dropdownContainer.style.border = '1px solid var(--background-modifier-border)';
         this.dropdownContainer.style.borderRadius = 'var(--input-radius, 4px)';
-        this.dropdownContainer.style.maxHeight = '200px';
+        this.dropdownContainer.style.maxHeight = '150px';
         this.dropdownContainer.style.overflowY = 'auto';
         this.dropdownContainer.style.zIndex = '1000';
         this.dropdownContainer.style.boxShadow = '0 2px 8px var(--background-modifier-box-shadow)';
