@@ -268,12 +268,14 @@ export class TagModal extends Modal {
         details.dataset.operationId = operation.id;
         (details as any)._toggleHandler = toggleHandler;
 
+        const tagCount = operation.notes.map(n => n.tag.name + '|' + n.tag.description).unique().length;
+        const noteCount = operation.notes.map(n => n.file).unique().length;
         details.createEl('summary', {
-            text: `${operation.id} ${operation.notes.filter(n => n.status !== 'queued').length}/${operation.notes.length}`
+            text: `${tagCount} tag${tagCount == 1 ? '' : 's'} for ${noteCount} note${noteCount == 1 ? '' : 's'} | ${operation.notes.filter(n => n.status !== 'queued').length}/${operation.notes.length}`
         });
 
         const rightContainer = container.createDiv({ cls: 'tag-operation-item-right-container' });
-        rightContainer.createSpan({ text: operation.status.toUpperCase() });
+        rightContainer.createSpan({ text: operation.status.toUpperCase(), cls: 'tag-operation-item-status' });
 
         if (operation.status === 'processing' || operation.status === 'queued') {
             new ButtonComponent(rightContainer).setIcon('x').setTooltip('Cancel operation').onClick(async () => {
