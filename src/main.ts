@@ -5,24 +5,14 @@ import { TagModal } from './ui/tag-modal';
 import { SettingsTab } from './ui/settings-tab';
 import { TagUtils } from './utils/tag-utils';
 import { OperationProcessor } from './operation-processor';
-import OpenAI from 'openai';
 
 export default class TagMyNotesPlugin extends Plugin {
-    serialized: Serialized;
-    tagUtils: TagUtils;
-    operationProcessor: OperationProcessor;
-    openai: OpenAI;
+    serialized: Serialized = { settings: DEFAULT_SETTINGS, operations: [] };
+    tagUtils: TagUtils = new TagUtils(this.app);
+    operationProcessor: OperationProcessor = new OperationProcessor(this);
 
     async onload() {
         await this.loadPersistent();
-        this.tagUtils = new TagUtils(this.app);
-        this.operationProcessor = new OperationProcessor(this);
-        if (this.serialized.settings.openAIApiKey) {
-            this.openai = new OpenAI({
-                apiKey: this.serialized.settings.openAIApiKey,
-                dangerouslyAllowBrowser: true
-            });
-        }
 
         this.addRibbonIcon('tag', 'Tag My Notes', () => {
             new TagModal(this.app, this).open();
@@ -58,11 +48,5 @@ export default class TagMyNotesPlugin extends Plugin {
 
     async savePersistent() {
         await this.saveData(this.serialized);
-        if (this.serialized.settings.openAIApiKey) {
-            this.openai = new OpenAI({
-                apiKey: this.serialized.settings.openAIApiKey,
-                dangerouslyAllowBrowser: true
-            });
-        }
     }
 }

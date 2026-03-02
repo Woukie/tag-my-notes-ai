@@ -4,8 +4,6 @@ export interface Serialized {
 }
 
 export interface Settings {
-    openAIApiKey: string;
-    openAIModel: string;
     tagDescriptions: Array<{
         name: string;
         description: string;
@@ -21,8 +19,21 @@ export interface Settings {
         maxContentLength: number;
         truncationStrategy: 'beginning' | 'end';
     };
-    responseFormat: 'function_calling' | 'structured_outputs';
-    functionDescription: string;
+    aiProvider: 'vercel_gateway' | 'ollama' | 'openai'
+    openaiSettings: {
+        baseUrl: string,
+        apiKey: string,
+        modelId: string
+    };
+    gatewaySettings: {
+        baseUrl: string,
+        apiKey: string,
+        modelId: string
+    };
+    ollamaSettings: {
+        baseUrl: string,
+        modelId: string
+    };
     shouldTagDescription: string;
     confidenceDescription: string;
 }
@@ -33,7 +44,7 @@ export interface TagOperation {
     notes: Array<{
         file: string;
         status: 'queued' | 'skipped' | 'no-change' | 'applied-tag' | 'removed-tag' | 'failed';
-        error: string;
+        error: any;
         tag: {
             name: string;
             description: string;

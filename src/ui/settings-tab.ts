@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Notice, SettingGroup } from "obsidian";
 import TagMyNotesPlugin from "../main";
-import { DEFAULT_SETTINGS, OPENAI_MODELS } from "../constants";
+import { DEFAULT_SETTINGS } from "../constants";
 
 export class SettingsTab extends PluginSettingTab {
     plugin: TagMyNotesPlugin;
@@ -14,36 +14,118 @@ export class SettingsTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        const aiGroup = new SettingGroup(containerEl);
-        aiGroup.setHeading("AI model");
+        const providerGroup = new SettingGroup(containerEl);
+        providerGroup.setHeading("AI provider");
 
-        aiGroup.addSetting(s => s
-            .setName('OpenAI API key')
-            .setDesc('The API key used to make requests.')
-            .addText(text => text
-                .setPlaceholder('sk-...')
-                .setValue(this.plugin.serialized.settings.openAIApiKey)
+        providerGroup.addSetting(s => s
+            .setName('Provider')
+            .setDesc('Choose the AI backend.')
+            .addDropdown(dropdown => dropdown
+                .addOption('vercel_gateway', 'Vercel AI Gateway')
+                .addOption('ollama', 'Ollama (Local)')
+                .setValue(this.plugin.serialized.settings.aiProvider)
                 .onChange(async (value) => {
-                    this.plugin.serialized.settings.openAIApiKey = value;
+                    const v = value as 'vercel_gateway' | 'ollama';
+                    this.plugin.serialized.settings.aiProvider = v;
                     await this.plugin.savePersistent();
+                    this.display();
                 }))
         );
 
-        aiGroup.addSetting(s => s
-            .setName('OpenAI model')
-            .setDesc('Which AI model is used by the plugin.')
-            .addDropdown(dropdown => {
-                Object.entries(OPENAI_MODELS).forEach(([value, label]) => {
-                    dropdown.addOption(value, label);
-                });
+        const prov = this.plugin.serialized.settings.aiProvider;
 
-                dropdown.setValue(this.plugin.serialized.settings.openAIModel)
+        if (prov === 'vercel_gateway') {
+            providerGroup.addSetting(s => s
+                .setName('Vercel API key')
+                .setDesc('Your Vercel AI Gateway API key.')
+                .addText(text => text
+                    .setPlaceholder('vercel_...')
+                    .setValue(this.plugin.serialized.settings.gatewaySettings.apiKey)
                     .onChange(async (value) => {
-                        this.plugin.serialized.settings.openAIModel = value;
+                        this.plugin.serialized.settings.gatewaySettings.apiKey = value;
                         await this.plugin.savePersistent();
-                    });
-            })
-        );
+                    }))
+            );
+            providerGroup.addSetting(s => s
+                .setName('Vercel Model ID')
+                .setDesc('Model name with provider prefix, e.g., "openai/gpt-4o", "anthropic/claude-3", "google/gemini-pro".')
+                .addText(text => text
+                    .setPlaceholder('openai/gpt-4o')
+                    .setValue(this.plugin.serialized.settings.gatewaySettings.modelId)
+                    .onChange(async (value) => {
+                        this.plugin.serialized.settings.gatewaySettings.modelId = value;
+                        await this.plugin.savePersistent();
+                    }))
+            );
+            providerGroup.addSetting(s => s
+                .setName('Vercel base URL')
+                .setDesc('Base url for vercel, leave blank for default.')
+                .addText(text => text
+                    .setPlaceholder('https://ai-gateway.vercel.sh/v3/ai')
+                    .setValue(this.plugin.serialized.settings.gatewaySettings.baseUrl)
+                    .onChange(async (value) => {
+                        this.plugin.serialized.settings.gatewaySettings.baseUrl = value;
+                        await this.plugin.savePersistent();
+                    }))
+            );
+        } else if (prov === 'ollama') {
+            providerGroup.addSetting(s => s
+                .setName('Ollama Model name')
+                .setDesc('Ollama model name (e.g., llama3, mistral).')
+                .addText(text => text
+                    .setPlaceholder('llama3')
+                    .setValue(this.plugin.serialized.settings.ollamaSettings.modelId)
+                    .onChange(async (value) => {
+                        this.plugin.serialized.settings.ollamaSettings.modelId = value;
+                        await this.plugin.savePersistent();
+                    }))
+            );
+            providerGroup.addSetting(s => s
+                .setName('Ollama base URL')
+                .setDesc('Base url for Ollama, leave blank for default.')
+                .addText(text => text
+                    .setPlaceholder('http://localhost:11434')
+                    .setValue(this.plugin.serialized.settings.ollamaSettings.baseUrl)
+                    .onChange(async (value) => {
+                        this.plugin.serialized.settings.ollamaSettings.baseUrl = value;
+                        await this.plugin.savePersistent();
+                    }))
+            );
+        } else if (prov === 'openai') {
+            providerGroup.addSetting(s => s
+                .setName('OpenAI API key')
+                .setDesc('Your OpenAI AI Gateway API key.')
+                .addText(text => text
+                    .setPlaceholder('sk_...')
+                    .setValue(this.plugin.serialized.settings.openaiSettings.apiKey)
+                    .onChange(async (value) => {
+                        this.plugin.serialized.settings.openaiSettings.apiKey = value;
+                        await this.plugin.savePersistent();
+                    }))
+            );
+            providerGroup.addSetting(s => s
+                .setName('OpenAI Model name')
+                .setDesc('Model name, e.g., "gpt-4o", "gpt-4o-mini".')
+                .addText(text => text
+                    .setPlaceholder('gpt-4o')
+                    .setValue(this.plugin.serialized.settings.openaiSettings.modelId)
+                    .onChange(async (value) => {
+                        this.plugin.serialized.settings.openaiSettings.modelId = value;
+                        await this.plugin.savePersistent();
+                    }))
+            );
+            providerGroup.addSetting(s => s
+                .setName('OpenAI base URL')
+                .setDesc('Base url for OpenAI, leave blank for default.')
+                .addText(text => text
+                    .setPlaceholder('http://localhost:11434')
+                    .setValue(this.plugin.serialized.settings.openaiSettings.baseUrl)
+                    .onChange(async (value) => {
+                        this.plugin.serialized.settings.openaiSettings.baseUrl = value;
+                        await this.plugin.savePersistent();
+                    }))
+            );
+        }
 
         const paramsGroup = new SettingGroup(containerEl);
         paramsGroup.setHeading("Model parameters");
@@ -89,10 +171,29 @@ export class SettingsTab extends PluginSettingTab {
                 }))
         );
 
-        const contextGroup = new SettingGroup(containerEl);
-        contextGroup.setHeading("Context clamping");
+        paramsGroup.addSetting(s => s
+            .setName('Should tag description')
+            .setDesc('Define what the \'shouldTag\' parameter means in the decision step.')
+            .addTextArea(dropdown => dropdown
+                .setValue(this.plugin.serialized.settings.shouldTagDescription)
+                .onChange(async (value) => {
+                    this.plugin.serialized.settings.shouldTagDescription = value;
+                    await this.plugin.savePersistent();
+                }))
+        );
 
-        contextGroup.addSetting(s => s
+        paramsGroup.addSetting(s => s
+            .setName('Confidence description')
+            .setDesc('Define what the \'confidence\' parameter means in the decision step.')
+            .addTextArea(dropdown => dropdown
+                .setValue(this.plugin.serialized.settings.confidenceDescription)
+                .onChange(async (value) => {
+                    this.plugin.serialized.settings.confidenceDescription = value;
+                    await this.plugin.savePersistent();
+                }))
+        );
+
+        paramsGroup.addSetting(s => s
             .setName('Enable context clamping')
             .setDesc('Limit the amount of context sent to the AI.')
             .addToggle(toggle => toggle
@@ -105,7 +206,7 @@ export class SettingsTab extends PluginSettingTab {
         );
 
         if (this.plugin.serialized.settings.contextClamping.enabled) {
-            contextGroup.addSetting(s => s
+            paramsGroup.addSetting(s => s
                 .setName('Max content length')
                 .setDesc('Maximum number of characters to send to the AI.')
                 .addText(text => text
@@ -120,71 +221,20 @@ export class SettingsTab extends PluginSettingTab {
                     }))
             );
 
-            contextGroup.addSetting(s => s
+            paramsGroup.addSetting(s => s
                 .setName('Truncation strategy')
                 .setDesc('Which part of the content to keep when truncating.')
                 .addDropdown(dropdown => dropdown
                     .addOption('beginning', 'Keep beginning')
                     .addOption('end', 'Keep end')
                     .setValue(this.plugin.serialized.settings.contextClamping.truncationStrategy)
-                    .onChange(async (value: 'beginning' | 'end') => {
-                        this.plugin.serialized.settings.contextClamping.truncationStrategy = value;
-                        await this.plugin.savePersistent();
-                    }))
-            );
-        }
-
-        const responseGroup = new SettingGroup(containerEl);
-        responseGroup.setHeading("Response format");
-
-        responseGroup.addSetting(s => s
-            .setName('Response format')
-            .setDesc('Choose how the AI should structure its responses.')
-            .addDropdown(dropdown => dropdown
-                .addOption('function_calling', 'Function calling')
-                .addOption('structured_outputs', 'Structured outputs')
-                .setValue(this.plugin.serialized.settings.responseFormat)
-                .onChange(async (value: 'function_calling' | 'structured_outputs') => {
-                    this.plugin.serialized.settings.responseFormat = value;
-                    this.display();
-                    await this.plugin.savePersistent();
-                }))
-        );
-
-        if (this.plugin.serialized.settings.responseFormat === 'function_calling') {
-            responseGroup.addSetting(s => s
-                .setName('Function description')
-                .setDesc('Describes the purpose of the function used in the final response with function calling. Does not apply to structured responses.')
-                .addTextArea(dropdown => dropdown
-                    .setValue(this.plugin.serialized.settings.functionDescription)
                     .onChange(async (value) => {
-                        this.plugin.serialized.settings.functionDescription = value;
+                        const v = value as 'beginning' | 'end';
+                        this.plugin.serialized.settings.contextClamping.truncationStrategy = v;
                         await this.plugin.savePersistent();
                     }))
             );
         }
-
-        responseGroup.addSetting(s => s
-            .setName('Should tag description')
-            .setDesc('Define what the \'shouldTag\' parameter means in the decision step.')
-            .addTextArea(dropdown => dropdown
-                .setValue(this.plugin.serialized.settings.shouldTagDescription)
-                .onChange(async (value) => {
-                    this.plugin.serialized.settings.shouldTagDescription = value;
-                    await this.plugin.savePersistent();
-                }))
-        );
-
-        responseGroup.addSetting(s => s
-            .setName('Confidence description')
-            .setDesc('Define what the \'confidence\' parameter means in the decision step.')
-            .addTextArea(dropdown => dropdown
-                .setValue(this.plugin.serialized.settings.confidenceDescription)
-                .onChange(async (value) => {
-                    this.plugin.serialized.settings.confidenceDescription = value;
-                    await this.plugin.savePersistent();
-                }))
-        );
 
         const tagGroup = new SettingGroup(containerEl);
         tagGroup.setHeading("Tag descriptions");

@@ -10,7 +10,7 @@ import { FolderSelectModal } from "./folder-select-modal";
 
 export class TagModal extends Modal {
     plugin: TagMyNotesPlugin;
-    operationsContainer: HTMLElement;
+    operationsContainer: HTMLElement | undefined;
     operationItemsOpen: Array<string> = [];
     configJSONItemsOpen: Array<string> = [];
     folderSelected: string = '/';
@@ -27,11 +27,11 @@ export class TagModal extends Modal {
 
     onOpen() {
         this.refreshOperations();
-        this.plugin.operationProcessor.operationEvents.on('update', this.refreshOperations);
+        this.plugin.operationProcessor.operationEvents.addEventListener('update', this.refreshOperations);
     }
 
     onClose(): void {
-        this.plugin.operationProcessor.operationEvents.off('update', this.refreshOperations);
+        this.plugin.operationProcessor.operationEvents.removeEventListener('update', this.refreshOperations);
     }
 
     private topSection(container: HTMLElement) {
@@ -225,7 +225,7 @@ export class TagModal extends Modal {
                     new Notice(`Started tagging operation for ${activeFile.name}`);
                 }
             } catch (error) {
-                new Notice(`Error creating operations: ${error.message}`);
+                new Notice(`Error creating operations`);
             } finally {
                 startButton.disabled = false;
                 updateStartButton();
@@ -269,6 +269,7 @@ export class TagModal extends Modal {
     private operationItem(operation: TagOperation) {
         const open = this.operationItemsOpen.contains(operation.id);
         const configOpen = this.configJSONItemsOpen.contains(operation.id);
+        if (!this.operationsContainer) return;
         const container = this.operationsContainer.createDiv();
         container.style.display = 'flex';
         container.style.marginTop = "var(--list-spacing)";

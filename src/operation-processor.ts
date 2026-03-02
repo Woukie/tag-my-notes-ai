@@ -2,14 +2,12 @@ import { Notice, TFile } from 'obsidian';
 import { AIHandler } from './ai-handler';
 import TagMyNotesPlugin from './main';
 import { TagOperation } from './types';
-import { EventEmitter } from 'events';
-import { randomUUID } from 'crypto';
 
 // This method allows for fututre parallelisation
 export class OperationProcessor {
     private plugin: TagMyNotesPlugin;
     private aiHandler: AIHandler;
-    operationEvents = new EventEmitter();
+    operationEvents = new EventTarget();
 
     // Keep track of which notes are being processed, as we can't store processing status in persistent due to restart issues
     private processingNotes: Array<{
@@ -30,7 +28,7 @@ export class OperationProcessor {
             operation.status = 'cancelled';
             operation.metadata.completedAt = Date.now();
             await this.plugin.savePersistent();
-            this.operationEvents.emit('update');
+            this.operationEvents.dispatchEvent(new Event('update'));
             new Notice(`Operation cancelled`);
         }
     }
@@ -40,7 +38,7 @@ export class OperationProcessor {
         if (index !== -1) {
             this.plugin.serialized.operations.splice(index, 1);
             await this.plugin.savePersistent();
-            this.operationEvents.emit('update');
+            this.operationEvents.dispatchEvent(new Event('update'));
             new Notice(`Operation deleted`);
         }
     }
@@ -62,7 +60,7 @@ export class OperationProcessor {
 
         const { tagDescriptions, ...settingsWithoutDescriptions } = this.plugin.serialized.settings;
         const operation: TagOperation = {
-            id: randomUUID(),
+            id: crypto.randomUUID(),
             status: 'queued',
             notes: notes.map(step => ({
                 file: step.file.path,
@@ -75,12 +73,12 @@ export class OperationProcessor {
             },
             metadata: {
                 createdAt: Date.now()
-            }
+            },
         };
 
         this.plugin.serialized.operations.unshift(operation);
         await this.plugin.saveData(this.plugin.serialized);
-        this.operationEvents.emit('update');
+        this.operationEvents.dispatchEvent(new Event('update'));
     }
 
     async watchOperations() {
@@ -106,7 +104,7 @@ export class OperationProcessor {
             operation.status = 'completed';
             operation.metadata.completedAt = Date.now();
             await this.plugin.savePersistent();
-            this.operationEvents.emit('update')
+            this.operationEvents.dispatchEvent(new Event('update'));
             new Notice(`Finished tagging operation`)
             return;
         }
@@ -120,7 +118,7 @@ export class OperationProcessor {
             operation.status = 'processing';
             operation.metadata.startedAt = Date.now();
             await this.plugin.savePersistent();
-            this.operationEvents.emit('update')
+            this.operationEvents.dispatchEvent(new Event('update'));
         }
 
         const noteIndex = operation.notes.indexOf(nextNote);
@@ -128,7 +126,7 @@ export class OperationProcessor {
 
         this.processingNotes.push(noteLock)
         await this.plugin.savePersistent();
-        this.operationEvents.emit('update')
+        this.operationEvents.dispatchEvent(new Event('update'));
 
         const file = this.plugin.app.vault.getAbstractFileByPath(nextNote.file);
         if (!file || !(file instanceof TFile)) {
@@ -136,7 +134,7 @@ export class OperationProcessor {
             nextNote.error = 'File not found';
             this.processingNotes.remove(noteLock);
             await this.plugin.savePersistent();
-            this.operationEvents.emit('update');
+            this.operationEvents.dispatchEvent(new Event('update'));
             new Notice(`File not found: '${nextNote.file}'`);
             return;
         }
@@ -161,12 +159,12 @@ export class OperationProcessor {
             new Notice(`Error processing '${nextNote.file}' for tag '${nextNote.tag.name}'`)
             console.error(`Error processing '${nextNote.file}' for tag '${nextNote.tag.name}'`, e)
             nextNote.status = 'failed';
-            nextNote.error = e
+            nextNote.error = e;
         }
 
         this.processingNotes.remove(noteLock)
 
         await this.plugin.savePersistent();
-        this.operationEvents.emit('update')
+        this.operationEvents.dispatchEvent(new Event('update'));
     }
 }

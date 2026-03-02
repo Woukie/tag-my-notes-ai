@@ -1,6 +1,10 @@
 import { TFile } from 'obsidian';
 import TagMyNotesPlugin from './main';
 import { TagOperation } from './types';
+import { createGateway, generateText, LanguageModel, ModelMessage, Output } from 'ai';
+import { createOllama, ollama } from 'ollama-ai-provider-v2';
+import { z } from 'zod';
+import { createOpenAI } from '@ai-sdk/openai';
 
 export interface TagDecision {
     shouldTag: boolean;
@@ -19,7 +23,7 @@ export class AIHandler {
         noteIndex: number
     ): Promise<TagDecision> {
         const steps = operation.config.reasoningSteps;
-        const note = operation.notes.at(noteIndex);
+        const note = operation.notes[noteIndex];
         if (!note) throw new Error(`Invalid note at ${noteIndex}`);
         const file = this.plugin.app.vault.getAbstractFileByPath(note.file);
 
@@ -42,16 +46,16 @@ export class AIHandler {
             }
         }
 
-        const messages: any[] = [
-            {
-                role: 'user',
-                content: `Filename: ${file?.name}\n\nContent: ${content}`
-            }
-        ];
+        const messages: ModelMessage[] = [{
+            role: 'user',
+            content: `Filename: ${file?.name}\n\nContent: ${content}`
+        }];
+
+        const model = this.getModel(operation);
 
         for (let i = 0; i < steps.length; i++) {
             const step = steps[i];
-            const isLastStep = i === steps.length - 1;
+            const lastStep = i === steps.length - 1;
 
             const stepPrompt = step.prompt
                 .replace(/{tag}/g, note.tag.name)
@@ -62,161 +66,76 @@ export class AIHandler {
                 content: stepPrompt
             });
 
-            if (!isLastStep) {
-                const response = await this.plugin.openai.chat.completions.create({
-                    model: operation.config.openAIModel,
+            if (!lastStep) {
+
+                const { text } = await generateText({
+                    model: model,
                     messages: messages,
                     temperature: operation.config.temperature,
-                    max_tokens: operation.config.maxTokens,
-                    response_format: { type: 'text' }
+                    maxOutputTokens: operation.config.maxTokens,
                 });
 
                 messages.push({
                     role: 'assistant',
-                    content: response.choices[0].message.content || ''
+                    content: text || ''
                 });
             } else {
-                const format = operation.config.responseFormat;
-
-                if (format === 'function_calling') {
-                    return this.handleFunctionCalling(operation, messages)
-                } else {
-                    return this.handleStructured(operation, messages)
-                }
+                return this.handleLastStep(operation, messages)
             }
         }
 
         throw new Error("Could not make AI request")
     }
 
-    private async handleFunctionCalling(
-        operation: TagOperation,
-        messages: any[]
-    ): Promise<TagDecision> {
-        const response = await this.plugin.openai.chat.completions.create({
-            model: operation.config.openAIModel,
-            messages: messages,
-            temperature: operation.config.temperature,
-            max_tokens: operation.config.maxTokens,
-            tools: [{
-                type: 'function',
-                function: {
-                    name: 'record_tag_decision',
-                    description: operation.config.functionDescription,
-                    strict: true,
-                    parameters: {
-                        type: 'object',
-                        properties: {
-                            shouldTag: {
-                                type: 'boolean',
-                                description: operation.config.shouldTagDescription
-                            },
-                            confidence: {
-                                type: 'number',
-                                description: operation.config.confidenceDescription,
-                                minimum: 0,
-                                maximum: 1
-                            }
-                        },
-                        required: ['shouldTag', 'confidence'],
-                        additionalProperties: false
-                    }
-                }
-            }],
-            tool_choice: {
-                type: 'function',
-                function: { name: 'record_tag_decision' }
-            }
-        });
-
-        const toolCall = response.choices[0].message.tool_calls?.[0];
-        if (toolCall && toolCall.function.name === 'record_tag_decision') {
-            try {
-                const result = JSON.parse(toolCall.function.arguments);
-                return {
-                    shouldTag: typeof result.shouldTag === 'boolean' ? result.shouldTag : false,
-                    confidence: typeof result.confidence === 'number' ? Math.max(0, Math.min(1, result.confidence)) : 0
-                };
-            } catch (e) {
-                throw new Error('Failed to parse function arguments');
-            }
+    private getModel(operation: TagOperation): LanguageModel {
+        switch (operation.config.aiProvider) {
+            case 'ollama':
+                var ollamaSettings = operation.config.ollamaSettings;
+                const ollama = createOllama({
+                    baseURL: ollamaSettings.baseUrl === '' ? undefined : ollamaSettings.baseUrl,
+                });
+                return ollama(ollamaSettings.modelId);
+            case 'openai':
+                var openaiSettings = operation.config.openaiSettings;
+                const openAI = createOpenAI({
+                    apiKey: openaiSettings.apiKey === '' ? undefined : openaiSettings.apiKey,
+                    baseURL: openaiSettings.baseUrl === '' ? undefined : openaiSettings.baseUrl,
+                })
+                return openAI(openaiSettings.modelId);
+            default:
+                var gatewaySettings = operation.config.gatewaySettings;
+                const gateway = createGateway({
+                    apiKey: gatewaySettings.apiKey === '' ? undefined : gatewaySettings.apiKey,
+                    baseURL: gatewaySettings.baseUrl === '' ? undefined : gatewaySettings.baseUrl,
+                });
+                return gateway(gatewaySettings.modelId);
         }
-
-        throw new Error('No function call data in AI response');
     }
 
-    private async handleStructured(operation: TagOperation, messages: any[]): Promise<TagDecision> {
-        const responseFormat = {
-            type: 'json_schema' as const,
-            json_schema: {
-                name: 'tag_decision',
-                strict: true,
-                schema: {
-                    type: 'object',
-                    properties: {
-                        shouldTag: {
-                            type: 'boolean',
-                            description: operation.config.shouldTagDescription
-                        },
-                        confidence: {
-                            type: 'number',
-                            description: operation.config.confidenceDescription,
-                            minimum: 0,
-                            maximum: 1
-                        }
-                    },
-                    required: ['shouldTag', 'confidence'],
-                    additionalProperties: false
-                }
-            }
-        }
+    private async handleLastStep(operation: TagOperation, messages: ModelMessage[]): Promise<TagDecision> {
+        const gateway = createGateway({
+            apiKey: operation.config.gatewaySettings.apiKey,
+        });
+        const model = gateway(operation.config.gatewaySettings.modelId);
 
-        const response = await this.plugin.openai.chat.completions.create({
-            model: operation.config.openAIModel,
+
+        const { output } = await generateText({
+            model: model,
+            output: Output.object({
+                schema: z.object({
+                    shouldTag: z.boolean().describe(operation.config.shouldTagDescription),
+                    confidence: z.number().describe(operation.config.confidenceDescription).max(1).min(0),
+                }),
+            }),
             messages: messages,
             temperature: operation.config.temperature,
-            max_tokens: operation.config.maxTokens,
-            response_format: responseFormat
+            maxOutputTokens: operation.config.maxTokens,
         });
 
-        const content = response.choices[0].message.content;
-
-        if (content) {
-            const message = response.choices[0].message;
-            if ('refusal' in message && message.refusal) {
-                throw new Error("AI refused to respond");
-            }
-
-            return this.parseTagDecision(content);
+        if (!output) {
+            throw new Error("No response from AI");
         }
 
-        throw new Error("No content in AI response");
-    }
-
-    private parseTagDecision(response: string): TagDecision {
-        const parsed = JSON.parse(response);
-
-        if (typeof parsed !== 'object' || parsed === null) {
-            throw new Error('Response is not an object');
-        }
-
-        if (!('shouldTag' in parsed) || !('confidence' in parsed)) {
-            throw new Error('Missing required fields');
-        }
-
-        if (typeof parsed.shouldTag !== 'boolean') {
-            throw new Error('shouldTag must be boolean');
-        }
-
-        if (typeof parsed.confidence !== 'number' ||
-            parsed.confidence < 0 ||
-            parsed.confidence > 1) {
-            throw new Error('confidence must be a number between 0 and 1');
-        }
-
-        return {
-            shouldTag: parsed.shouldTag,
-            confidence: parsed.confidence
-        };
+        return output;
     }
 }
