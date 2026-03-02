@@ -106,7 +106,7 @@ export class SettingsTab extends PluginSettingTab {
             );
             providerGroup.addSetting(s => s
                 .setName('OpenAI model name')
-                .setDesc('Model name, e.g., "gpt-4o", "gpt-4o-mini".')
+                .setDesc('Model name, e.g., "gpt-4o".')
                 .addText(text => text
                     .setPlaceholder('gpt-4o')
                     .setValue(this.plugin.serialized.settings.openaiSettings.modelId)

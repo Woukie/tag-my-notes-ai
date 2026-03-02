@@ -22,7 +22,7 @@ export const DEFAULT_SETTINGS: Settings = {
     openaiSettings: {
         apiKey: '',
         baseUrl: '',
-        modelId: 'openai/gpt-4o-mini'
+        modelId: 'gpt-4o-mini'
     },
     gatewaySettings: {
         baseUrl: '',
