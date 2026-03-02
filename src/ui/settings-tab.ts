@@ -40,7 +40,7 @@ export class SettingsTab extends PluginSettingTab {
                 .setName('Vercel API key')
                 .setDesc('Your Vercel AI Gateway API key.')
                 .addText(text => text
-                    .setPlaceholder('vercel_...')
+                    .setPlaceholder('vck_...')
                     .setValue(this.plugin.serialized.settings.gatewaySettings.apiKey)
                     .onChange(async (value) => {
                         this.plugin.serialized.settings.gatewaySettings.apiKey = value;
@@ -97,7 +97,7 @@ export class SettingsTab extends PluginSettingTab {
                 .setName('OpenAI API key')
                 .setDesc('Your OpenAI AI Gateway API key.')
                 .addText(text => text
-                    .setPlaceholder('sk_...')
+                    .setPlaceholder('sk-...')
                     .setValue(this.plugin.serialized.settings.openaiSettings.apiKey)
                     .onChange(async (value) => {
                         this.plugin.serialized.settings.openaiSettings.apiKey = value;
