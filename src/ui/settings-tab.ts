@@ -60,7 +60,7 @@ export class SettingsTab extends PluginSettingTab {
             );
             providerGroup.addSetting(s => s
                 .setName('Vercel base URL')
-                .setDesc('Base url for vercel, leave blank for default.')
+                .setDesc('Base url for Vercel, leave blank for default.')
                 .addText(text => text
                     .setPlaceholder('https://ai-gateway.vercel.sh/v3/ai')
                     .setValue(this.plugin.serialized.settings.gatewaySettings.baseUrl)
