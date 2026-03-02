@@ -686,7 +686,7 @@ var SettingsTab = class extends import_obsidian3.PluginSettingTab {
         }))
       );
       providerGroup.addSetting(
-        (s) => s.setName("Vercel Model ID").setDesc('Model name with provider prefix, e.g., "openai/gpt-4o", "anthropic/claude-3", "google/gemini-pro".').addText((text2) => text2.setPlaceholder("openai/gpt-4o").setValue(this.plugin.serialized.settings.gatewaySettings.modelId).onChange(async (value) => {
+        (s) => s.setName("Vercel model ID").setDesc('Model name with provider prefix, e.g., "openai/gpt-4o", "anthropic/claude-3", "google/gemini-pro".').addText((text2) => text2.setPlaceholder("openai/gpt-4o").setValue(this.plugin.serialized.settings.gatewaySettings.modelId).onChange(async (value) => {
           this.plugin.serialized.settings.gatewaySettings.modelId = value;
           await this.plugin.savePersistent();
         }))
@@ -699,7 +699,7 @@ var SettingsTab = class extends import_obsidian3.PluginSettingTab {
       );
     } else if (prov === "ollama") {
       providerGroup.addSetting(
-        (s) => s.setName("Ollama Model name").setDesc("Ollama model name (e.g., llama3, mistral).").addText((text2) => text2.setPlaceholder("llama3").setValue(this.plugin.serialized.settings.ollamaSettings.modelId).onChange(async (value) => {
+        (s) => s.setName("Ollama model name").setDesc("Ollama model name (e.g., llama3, mistral).").addText((text2) => text2.setPlaceholder("llama3").setValue(this.plugin.serialized.settings.ollamaSettings.modelId).onChange(async (value) => {
           this.plugin.serialized.settings.ollamaSettings.modelId = value;
           await this.plugin.savePersistent();
         }))
@@ -718,7 +718,7 @@ var SettingsTab = class extends import_obsidian3.PluginSettingTab {
         }))
       );
       providerGroup.addSetting(
-        (s) => s.setName("OpenAI Model name").setDesc('Model name, e.g., "gpt-4o", "gpt-4o-mini".').addText((text2) => text2.setPlaceholder("gpt-4o").setValue(this.plugin.serialized.settings.openaiSettings.modelId).onChange(async (value) => {
+        (s) => s.setName("OpenAI model name").setDesc('Model name, e.g., "gpt-4o", "gpt-4o-mini".').addText((text2) => text2.setPlaceholder("gpt-4o").setValue(this.plugin.serialized.settings.openaiSettings.modelId).onChange(async (value) => {
           this.plugin.serialized.settings.openaiSettings.modelId = value;
           await this.plugin.savePersistent();
         }))

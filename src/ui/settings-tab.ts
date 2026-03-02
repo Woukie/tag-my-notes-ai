@@ -48,7 +48,7 @@ export class SettingsTab extends PluginSettingTab {
                     }))
             );
             providerGroup.addSetting(s => s
-                .setName('Vercel Model ID')
+                .setName('Vercel model ID')
                 .setDesc('Model name with provider prefix, e.g., "openai/gpt-4o", "anthropic/claude-3", "google/gemini-pro".')
                 .addText(text => text
                     .setPlaceholder('openai/gpt-4o')
@@ -71,7 +71,7 @@ export class SettingsTab extends PluginSettingTab {
             );
         } else if (prov === 'ollama') {
             providerGroup.addSetting(s => s
-                .setName('Ollama Model name')
+                .setName('Ollama model name')
                 .setDesc('Ollama model name (e.g., llama3, mistral).')
                 .addText(text => text
                     .setPlaceholder('llama3')
@@ -105,7 +105,7 @@ export class SettingsTab extends PluginSettingTab {
                     }))
             );
             providerGroup.addSetting(s => s
-                .setName('OpenAI Model name')
+                .setName('OpenAI model name')
                 .setDesc('Model name, e.g., "gpt-4o", "gpt-4o-mini".')
                 .addText(text => text
                     .setPlaceholder('gpt-4o')
