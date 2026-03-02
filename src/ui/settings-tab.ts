@@ -22,10 +22,11 @@ export class SettingsTab extends PluginSettingTab {
             .setDesc('Choose the AI backend.')
             .addDropdown(dropdown => dropdown
                 .addOption('vercel_gateway', 'Vercel AI Gateway')
-                .addOption('ollama', 'Ollama (Local)')
+                .addOption('ollama', 'Ollama')
+                .addOption('openai', 'OpenAI')
                 .setValue(this.plugin.serialized.settings.aiProvider)
                 .onChange(async (value) => {
-                    const v = value as 'vercel_gateway' | 'ollama';
+                    const v = value as 'vercel_gateway' | 'ollama' | 'openai';
                     this.plugin.serialized.settings.aiProvider = v;
                     await this.plugin.savePersistent();
                     this.display();
