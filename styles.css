@@ -1,0 +1,145 @@
+.multidropdown-wrapper {
+    position: relative;
+    flex-grow: 1;
+}
+
+.multidropdown-button {
+    display: grid;
+}
+
+.multidropdown-text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    align-content: center;
+    color: var(--text-normal);
+}
+
+.multidropdown-text[empty] {
+    color: var(--text-muted);
+}
+
+.multidropdown-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--input-radius, 4px);
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 2px 8px var(--background-modifier-box-shadow);
+    display: none;
+}
+
+.multidropdown-container[open] {
+    display: block;
+}
+
+.multidropdown-option {
+    padding: var(--input-padding);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.multidropdown-option:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.multidropdown-option-checkbox {
+    cursor: pointer;
+    margin: 0;
+}
+
+.multidropdown-option-text {
+    flex-grow: 1;
+}
+
+.multidropdown-option-description {
+    font-size: var(--font-small);
+    color: var(--text-muted);
+}
+
+.tag-select-container {
+    display: flex;
+    margin-bottom: var(--size-4-2);
+}
+
+.tag-select-container-separator {
+    margin-right: var(--size-4-2);
+}
+
+.tag-description-container {
+    font-style: italic;
+    margin-bottom: var(--size-4-2);
+    padding: var(--size-4-1);
+    border: var(--border-width) solid var(--background-modifier-border);
+    background: var(--background-primary-alt);
+    border-radius: var(--radius-s);
+    line-height: var(--line-height-normal)em;
+    min-height: calc(var(--line-height-normal) * 3em + 1px);
+}
+
+.tag-strategy-container {
+    display: flex;
+}
+
+.tag-select-folder-button {
+    margin-left: var(--size-4-2);
+    display: none;
+}
+
+.tag-select-folder-button[visible] {
+    display: flex;
+}
+
+.tag-note-strategy-dropdown {
+    flex-grow: 1;
+}
+
+.tag-start-button {
+    margin-top: var(--size-4-2);
+}
+
+.tag-details-summary {
+    margin-top: var(--size-4-2);
+}
+
+.tag-details-wrapper {
+    margin-left: var(--list-indent);
+}
+
+.tag-operation-item-container {
+    display: flex;
+    margin-top: var(--list-spacing);
+    margin-left: var(--list-indent);
+}
+
+.tag-operation-item-details {
+    flex-grow: 1;
+    align-content: center;
+}
+
+.tag-operation-item-right-container {
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    height: fit-content;
+}
+
+.tag-operation-item-right-operation-status {
+    margin-right: var(--size-4-1);
+}
+
+.tag-operation-item-details-list {
+    margin-top: var(--list-spacing);
+}
+
+.tag-operation-item-code {
+    width: 100%;
+    white-space: pre-wrap;
+}

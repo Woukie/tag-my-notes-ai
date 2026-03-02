@@ -35,24 +35,22 @@ export class TagModal extends Modal {
     }
 
     private topSection(container: HTMLElement) {
-        const tagSelectContainer = container.createDiv();
-        tagSelectContainer.style.display = 'flex';
-        tagSelectContainer.style.marginBottom = 'var(--size-4-2)';
+        const tagSelectContainer = container.createDiv({ cls: 'tag-select-container' });
 
         const tagDropdown = new MultiDropdownComponent(tagSelectContainer)
             .setPlaceholder('Add tags in the settings')
             .setButtonTextBuilder(values => values.map(tag => tag.name).join(', '));
-        tagSelectContainer.createDiv().style.marginRight = 'var(--size-4-2)'
+        tagSelectContainer.createDiv({ cls: 'tag-select-container-separator' });
 
         new ButtonComponent(tagSelectContainer).setButtonText('All').onClick(() => {
             tagDropdown.selectAll();
         })
-        tagSelectContainer.createDiv().style.marginRight = 'var(--size-4-2)'
+        tagSelectContainer.createDiv({ cls: 'tag-select-container-separator' });
 
         new ButtonComponent(tagSelectContainer).setButtonText('None').onClick(() => {
             tagDropdown.clear();
         })
-        tagSelectContainer.createDiv().style.marginRight = 'var(--size-4-2)'
+        tagSelectContainer.createDiv({ cls: 'tag-select-container-separator' });
 
         new ButtonComponent(tagSelectContainer).setIcon('settings').onClick(() => {
             const settings = (this.app as any).setting;
@@ -71,15 +69,6 @@ export class TagModal extends Modal {
         });
 
         const descriptionContainer = container.createDiv('tag-description-container');
-        descriptionContainer.style.fontStyle = 'italic';
-        descriptionContainer.style.marginBottom = 'var(--size-4-2)';
-        descriptionContainer.style.padding = 'var(--size-4-1)';
-        descriptionContainer.style.border = 'var(--border-width) solid var(--background-modifier-border)';
-        descriptionContainer.style.background = 'var(--background-primary-alt)'
-        descriptionContainer.style.borderRadius = 'var(--radius-s)'
-
-        descriptionContainer.style.lineHeight = 'var(--line-height-normal)em';
-        descriptionContainer.style.minHeight = 'calc(var(--line-height-normal) * 3em + 1px)';
 
         const updateDescription = (selectedTagObjects: any[]) => {
             if (selectedTagObjects.length == 1) {
@@ -94,24 +83,23 @@ export class TagModal extends Modal {
         tagDropdown.onChange(updateDescription);
         updateDescription(tagDropdown.getValue())
 
-        const strategyContainer = container.createDiv();
-        strategyContainer.style.display = 'flex';
+        const strategyContainer = container.createDiv({ cls: 'tag-strategy-container' });
 
         const noteStrategyDropdown = new DropdownComponent(strategyContainer)
             .addOption('all_notes', "Tag all notes")
             .addOption('select_folder', "Tag folder")
-            .addOption('this_note', "Tag this note")
+            .addOption('this_note', "Tag active note")
             .setValue('all_notes')
             .onChange(() => {
                 if (noteStrategyDropdown.getValue() === 'select_folder') {
-                    selectFolderButton.buttonEl.style.display = 'flex';
+                    selectFolderButton.buttonEl.setAttribute('visible', '')
                 } else {
-                    selectFolderButton.buttonEl.style.display = 'none';
+                    selectFolderButton.buttonEl.removeAttribute('visible')
                 }
 
                 updateStartButton();
             });
-        noteStrategyDropdown.selectEl.style.flexGrow = '1';
+        noteStrategyDropdown.selectEl.addClass('tag-note-strategy-dropdown');
 
         const selectFolderButton = new ButtonComponent(strategyContainer)
             .setIcon('folder-search')
@@ -121,12 +109,9 @@ export class TagModal extends Modal {
                     this.folderSelected = folder.path;
                     updateStartButton();
                 }).open();
-            });
-        selectFolderButton.buttonEl.style.marginLeft = 'var(--size-4-2)';
-        selectFolderButton.buttonEl.style.display = 'none';
+            }).setClass('tag-select-folder-button');
 
-        const startButton = container.createEl('button');
-        startButton.style.marginTop = 'var(--size-4-2)'
+        const startButton = container.createEl('button', { cls: 'tag-start-button' });
 
         const updateStartButton = () => {
             startButton.disabled = false;
@@ -235,11 +220,9 @@ export class TagModal extends Modal {
 
     private bottomSection(container: HTMLElement) {
         const details = container.createEl('details');
-        details.createEl('summary', { text: `Operations` });
-        details.style.marginTop = 'var(--size-4-2)';
+        details.createEl('summary', { text: `Operations`, cls: 'tag-details-summary' });
 
         const wrapper = details.createDiv();
-        wrapper.style.marginLeft = 'var(--list-indent)';
         this.operationsContainer = wrapper.createDiv();;
     }
 
@@ -270,12 +253,8 @@ export class TagModal extends Modal {
         const open = this.operationItemsOpen.contains(operation.id);
         const configOpen = this.configJSONItemsOpen.contains(operation.id);
         if (!this.operationsContainer) return;
-        const container = this.operationsContainer.createDiv();
-        container.style.display = 'flex';
-        container.style.marginTop = "var(--list-spacing)";
-        const details = container.createEl('details');
-        details.style.flexGrow = '1';
-        details.style.alignContent = 'center';
+        const container = this.operationsContainer.createDiv({ cls: 'tag-operation-item-container' });
+        const details = container.createEl('details', { cls: 'tag-operation-item-details' });
         details.open = open;
 
         const toggleHandler = () => {
@@ -293,12 +272,8 @@ export class TagModal extends Modal {
             text: `${operation.id} ${operation.notes.filter(n => n.status !== 'queued').length}/${operation.notes.length}`
         });
 
-        const rightContainer = container.createDiv();
-        rightContainer.style.whiteSpace = 'nowrap';
-        rightContainer.style.display = 'flex';
-        rightContainer.style.alignItems = 'center';
-        rightContainer.style.height = 'fit-content';
-        rightContainer.createSpan({ text: operation.status.toUpperCase() }).style.marginRight = 'var(--size-4-1)';
+        const rightContainer = container.createDiv({ cls: 'tag-operation-item-right-container' });
+        rightContainer.createSpan({ text: operation.status.toUpperCase() });
 
         if (operation.status === 'processing' || operation.status === 'queued') {
             new ButtonComponent(rightContainer).setIcon('x').setTooltip('Cancel operation').onClick(async () => {
@@ -310,8 +285,7 @@ export class TagModal extends Modal {
             });
         }
 
-        const list = details.createEl('ul');
-        list.style.marginTop = 'var(--list-spacing)'
+        const list = details.createEl('ul', { cls: 'tag-operation-item-details-list' });
         list.createEl('li', { text: `Created: ${new Date(operation.metadata.createdAt).toLocaleString()}` });
         if (operation.metadata.startedAt) list.createEl('li', { text: `Started: ${new Date(operation.metadata.startedAt).toLocaleString()}` });
         if (operation.metadata.completedAt) list.createEl('li', { text: `Completed: ${new Date(operation.metadata.completedAt).toLocaleString()}` });
@@ -336,8 +310,6 @@ export class TagModal extends Modal {
 
         jsonDetails.createEl('summary', { text: 'JSON Config' });
         jsonDetails.open = configOpen;
-        const code = jsonDetails.createEl('code', { text: JSON.stringify(operation.config, null, 2) });
-        code.style.width = '100%';
-        code.style.whiteSpace = 'pre-wrap';
+        jsonDetails.createEl('code', { text: JSON.stringify(operation.config, null, 2), cls: 'tag-operation-item-code' });
     }
 }

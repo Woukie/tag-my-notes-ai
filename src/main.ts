@@ -42,11 +42,11 @@ export default class TagMyNotesPlugin extends Plugin {
         this.operationProcessor.watchOperations();
     }
 
-    async loadPersistent() {
+    private async loadPersistent() {
         this.serialized = Object.assign({}, { settings: DEFAULT_SETTINGS, operations: [] }, await this.loadData())
     }
 
-    async savePersistent() {
+    private async savePersistent() {
         await this.saveData(this.serialized);
     }
 }

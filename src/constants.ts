@@ -1,14 +1,13 @@
 import { Settings } from "./types";
 
 export const DEFAULT_SETTINGS: Settings = {
-    tagDescriptions: [{ name: "online_resource", description: "Very broad category, applying to every note that focuses on an online resource" }],
+    tagDescriptions: [{ name: "quote", description: "Applies to notes containing only a quote from any media. i.e., Movies, people, studies..." }],
     confidenceThreshold: 0.7,
     reasoningSteps: [
         {
-            prompt: `Take a look at the note. Discuss what the note is about and whether the tag "{tag}" belongs on the note.\n\nTag description: {description}`
-        },
-        {
-            prompt: `This is your final decision. Based on the note content, determine if this note should be tagged with "{tag}".`
+            prompt: `Take a look at the note. Decide whether the tag '{tag}' belongs on the note.
+
+Tag description: {description}`
         }
     ],
     temperature: 0.3,

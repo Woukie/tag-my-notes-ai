@@ -3,7 +3,7 @@
 // - DONE select all, and clear
 
 export class MultiDropdownComponent {
-    private container: HTMLElement;
+    private wrapper: HTMLElement;
     private dropdownContainer: HTMLElement;
     private button: HTMLElement;
     private buttonText: HTMLElement;
@@ -16,25 +16,18 @@ export class MultiDropdownComponent {
     private buttonTextBuilder = (values: any[]) => `Selected ${values.length} values`
 
     constructor(parent: HTMLElement) {
-        this.container = parent.createDiv();
-        this.container.style.position = 'relative';
-        this.container.style.flexGrow = '1';
+        this.wrapper = parent.createDiv({ cls: 'multidropdown-wrapper' });
 
         this.createButton();
-        this.createDropdownContainer();
+        this.dropdownContainer = this.wrapper.createDiv({ cls: 'multidropdown-container' });
 
         document.addEventListener('click', this.handleDocumentClick.bind(this));
     }
 
     private createButton() {
-        this.button = this.container.createDiv({ cls: 'dropdown' });
-        this.button.style.display = 'grid';
+        this.button = this.wrapper.createDiv({ cls: 'dropdown multidropdown-button' });
 
-        this.buttonText = this.button.createSpan({ text: 'Select options...' });
-        this.buttonText.style.overflow = 'hidden'
-        this.buttonText.style.whiteSpace = 'nowrap'
-        this.buttonText.style.textOverflow = 'ellipsis'
-        this.buttonText.style.alignContent = 'center'
+        this.buttonText = this.button.createSpan({ cls: 'multidropdown-text', text: 'Select options...' });
 
         this.button.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -44,26 +37,10 @@ export class MultiDropdownComponent {
         });
     }
 
-    private createDropdownContainer() {
-        this.dropdownContainer = this.container.createDiv();
-        this.dropdownContainer.style.position = 'absolute';
-        this.dropdownContainer.style.top = '100%';
-        this.dropdownContainer.style.left = '0';
-        this.dropdownContainer.style.right = '0';
-        this.dropdownContainer.style.backgroundColor = 'var(--background-primary)';
-        this.dropdownContainer.style.border = '1px solid var(--background-modifier-border)';
-        this.dropdownContainer.style.borderRadius = 'var(--input-radius, 4px)';
-        this.dropdownContainer.style.maxHeight = '150px';
-        this.dropdownContainer.style.overflowY = 'auto';
-        this.dropdownContainer.style.zIndex = '1000';
-        this.dropdownContainer.style.boxShadow = '0 2px 8px var(--background-modifier-box-shadow)';
-        this.dropdownContainer.style.display = 'none';
-    }
-
     private handleDocumentClick(e: MouseEvent) {
         if (!this.dropdownVisible) return;
 
-        if (!this.container.contains(e.target as Node)) {
+        if (!this.wrapper.contains(e.target as Node)) {
             this.hideDropdown();
         }
     }
@@ -77,22 +54,22 @@ export class MultiDropdownComponent {
     }
 
     private showDropdown() {
-        this.dropdownContainer.style.display = 'block';
+        this.dropdownContainer.setAttribute("open", "");
         this.dropdownVisible = true;
     }
 
     private hideDropdown() {
-        this.dropdownContainer.style.display = 'none';
+        this.dropdownContainer.removeAttribute("open")
         this.dropdownVisible = false;
     }
 
     private updateButtonText() {
         if (this.selectedValues.size === 0) {
             this.buttonText.setText(this.placeholder);
-            this.buttonText.style.color = 'var(--text-muted)';
+            this.buttonText.setAttribute('empty', '')
         } else {
             this.buttonText.setText(this.buttonTextBuilder(this.getValue()));
-            this.buttonText.style.color = 'var(--text-normal)';
+            this.buttonText.removeAttribute('empty')
         }
     }
 
@@ -104,33 +81,23 @@ export class MultiDropdownComponent {
     addOption(value: any, text: string, description?: string): this {
         if (this.options.has(value)) return this;
 
-        const optionContainer = this.dropdownContainer.createDiv({ cls: 'multi-dropdown-option' });
-        optionContainer.style.padding = 'var(--input-padding)';
-        optionContainer.style.cursor = 'pointer';
-        optionContainer.style.display = 'flex';
-        optionContainer.style.alignItems = 'center';
-        optionContainer.style.gap = '8px';
+        const optionContainer = this.dropdownContainer.createDiv({ cls: 'multidropdown-option' });
 
         const checkbox = optionContainer.createEl('input', {
             type: 'checkbox',
+            cls: 'multidropdown-option-checkbox',
             attr: { id: `option-${Math.random().toString(36).substr(2, 9)}` }
         });
-        checkbox.style.cursor = 'pointer';
-        checkbox.style.margin = '0';
 
-        const textContainer = optionContainer.createDiv();
-        textContainer.style.flexGrow = '1';
-
-        const nameSpan = textContainer.createSpan({ text });
+        const textContainer = optionContainer.createDiv({ cls: 'multidropdown-option-text' });
+        textContainer.createSpan({ text });
 
         if (description) {
             textContainer.createEl('br');
-            const descSpan = textContainer.createSpan({
+            textContainer.createSpan({
                 text: description,
-                cls: 'multi-dropdown-option-description'
+                cls: 'multidropdown-option-description'
             });
-            descSpan.style.fontSize = 'var(--font-small)';
-            descSpan.style.color = 'var(--text-muted)';
         }
 
         this.options.set(value, {
@@ -163,14 +130,6 @@ export class MultiDropdownComponent {
             }
             this.updateButtonText();
             this.triggerOnChange();
-        });
-
-        optionContainer.addEventListener('mouseenter', () => {
-            optionContainer.style.backgroundColor = 'var(--background-modifier-hover)';
-        });
-
-        optionContainer.addEventListener('mouseleave', () => {
-            optionContainer.style.backgroundColor = '';
         });
 
         return this;
@@ -239,6 +198,6 @@ export class MultiDropdownComponent {
     }
     destroy() {
         document.removeEventListener('click', this.handleDocumentClick.bind(this));
-        this.container.empty();
+        this.wrapper.empty();
     }
 }
