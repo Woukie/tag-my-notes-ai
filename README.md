@@ -2,6 +2,20 @@
 
 Tag notes with your AI model of choice, choose which notes and which tags to consider and customize thought process to your preference.
 
+## Showcase
+
+Quickly create an 'all-tags' operation on the active note
+
+![Animated PNG showcasing the right click 'quick tag' feature](quick_tag.png "Right-click menu quick action demo")
+
+Tag a folder, active note, or all notes from the 'Tag My Notes' pop-up
+
+![Animated PNG showcases user tagging a folder through the 'Tag My Notes' pop-up](tag_folder.png "'Tag My Notes' pop-up folder tag demo")
+
+Settings contains model & params, resoning steps and tag list
+
+![Animated PNG showcases user tweaking various settings](settings.png "Tweak settings through the settings provided in Obsidian")
+
 ## Features
 
 - Choose which tags to apply, and which notes to apply them to
@@ -13,11 +27,11 @@ Tag notes with your AI model of choice, choose which notes and which tags to con
 
 ## Usage
 
-In the ribbon on the left, select **Tag My Notes** ( ![[lucide-tag.svg#icon]] ) to open the **Tag My Notes** pop-up.
+In the ribbon on the left, select **Tag My Notes** to open the **Tag My Notes** pop-up.
 
 From the **Tag My Notes** pop-up, you can choose which notes to tag and which tags to apply.
 
-In the context menu (right-click on desktop), select **Apply all tags to note** ( ![[lucide-tag.svg#icon]] ) to quicky tag the active note with all tags without having to open the **Tag My Notes** pop-up.
+In the context menu (right-click on desktop), select **Apply all tags to note** to quicky tag the active note with all tags without having to open the **Tag My Notes** pop-up.
 
 From the settings menu, add tags and their descriptions, choose an AI model, modify model parameters and even chain of thought.
 
