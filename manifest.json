@@ -6,6 +6,9 @@
 	"description": "Tag notes with your chosen AI model, control which notes and tags to use, and modify the model's thought process to your liking.",
 	"author": "Woukie",
 	"authorUrl": "https://github.com/Woukie/",
-	"fundingUrl": "",
+	"fundingUrl": {
+		"Buy Me a Coffee": "https://buymeacoffee.com/lucaseldon",
+		"GitHub Sponsor": "https://github.com/sponsors/woukie"
+	},
 	"isDesktopOnly": false
 }
