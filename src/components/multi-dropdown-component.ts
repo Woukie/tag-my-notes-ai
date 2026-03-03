@@ -5,8 +5,8 @@
 export class MultiDropdownComponent {
     private wrapper: HTMLElement;
     private dropdownContainer: HTMLElement;
-    private button: HTMLElement;
-    private buttonText: HTMLElement;
+    private button: HTMLElement | undefined;
+    private buttonText: HTMLElement | undefined;
     private options: Map<any, { text: string, description?: string, checkbox: HTMLInputElement, optionEl: HTMLElement }> = new Map();
     private selectedValues: Set<any> = new Set();
     private dropdownVisible: boolean = false;
@@ -65,11 +65,11 @@ export class MultiDropdownComponent {
 
     private updateButtonText() {
         if (this.selectedValues.size === 0) {
-            this.buttonText.setText(this.placeholder);
-            this.buttonText.setAttribute('empty', '')
+            this.buttonText?.setText(this.placeholder);
+            this.buttonText?.setAttribute('empty', '')
         } else {
-            this.buttonText.setText(this.buttonTextBuilder(this.getValue()));
-            this.buttonText.removeAttribute('empty')
+            this.buttonText?.setText(this.buttonTextBuilder(this.getValue()));
+            this.buttonText?.removeAttribute('empty')
         }
     }
 
