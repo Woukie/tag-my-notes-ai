@@ -46,3 +46,8 @@ Had to buy Vercel credit to test this so consider sponsoring if you find this us
 
 > [!NOTE]
 > Network use disclaimer, this plugin requires a third party service unless you are self hosting the AI model. Vercel Gateway, OpenAI or Ollama are the available options.
+
+## Attribution
+
+- Uses the JS AI API [here](https://www.npmjs.com/package/ai)
+- Uses the libraries [ollama-ai-provider-v2](https://www.npmjs.com/package/ollama-ai-provider-v2) and [@ai-sdk/openai](https://www.npmjs.com/package/@ai-sdk/openai) when not using the Vercel Gateway
