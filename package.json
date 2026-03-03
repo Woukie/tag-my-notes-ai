@@ -1,6 +1,6 @@
 {
 	"name": "tag-my-notes-ai",
-	"description": "Tag every note in your vault with a tag based on a description",
+	"description": "Tag notes with your chosen AI model, control which notes and tags to use, and modify the model's thought process to your liking.",
 	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
