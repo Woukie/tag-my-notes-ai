@@ -24,13 +24,13 @@
     top: 100%;
     left: 0;
     right: 0;
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: var(--input-radius, 4px);
+    background-color: var(--background-secondary);
+    background-blend-mode: var(--dropdown-background-blend-mode);
+    border-radius: var(--radius-s);
+    border: var(--border-width) solid var(--background-modifier-border);
     max-height: 150px;
     overflow-y: auto;
     z-index: 1000;
-    box-shadow: 0 2px 8px var(--background-modifier-box-shadow);
     display: none;
 }
 
@@ -47,7 +47,7 @@
 }
 
 .multidropdown-option:hover {
-    background-color: var(--background-modifier-hover);
+    background-color: var(--dropdown-background-hover);
 }
 
 .multidropdown-option-checkbox {
