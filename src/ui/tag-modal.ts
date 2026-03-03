@@ -11,9 +11,13 @@ import { FolderSelectModal } from "./folder-select-modal";
 export class TagModal extends Modal {
     plugin: TagMyNotesPlugin;
     operationsContainer: HTMLElement | undefined;
+    startButton: HTMLElement | undefined;
+    noteStrategyDropdown: DropdownComponent | undefined;
+    tagDropdown: MultiDropdownComponent | undefined;
     operationItemsOpen: Array<string> = [];
     configJSONItemsOpen: Array<string> = [];
     folderSelected: string = '/';
+    refreshEventListeners: { element: HTMLDetailsElement, name: string, event: any }[] = [];
 
     constructor(app: App, plugin: TagMyNotesPlugin) {
         super(app);
@@ -32,23 +36,30 @@ export class TagModal extends Modal {
 
     onClose(): void {
         this.plugin.operationProcessor.operationEvents.removeEventListener('update', this.refreshOperations);
+        this.startButton?.removeEventListener('click', this.onStartClick);
+        this.clearRefreshEvents();
+    }
+
+    private clearRefreshEvents() {
+        this.refreshEventListeners.forEach(e => e.element.removeEventListener(e.name, e.event));
+        this.refreshEventListeners = [];
     }
 
     private topSection(container: HTMLElement) {
         const tagSelectContainer = container.createDiv({ cls: 'tag-select-container' });
 
-        const tagDropdown = new MultiDropdownComponent(tagSelectContainer)
+        this.tagDropdown = new MultiDropdownComponent(tagSelectContainer)
             .setPlaceholder('Add tags in the settings')
             .setButtonTextBuilder(values => values.map(tag => tag.name).join(', '));
         tagSelectContainer.createDiv({ cls: 'tag-select-container-separator' });
 
         new ButtonComponent(tagSelectContainer).setButtonText('All').onClick(() => {
-            tagDropdown.selectAll();
+            this.tagDropdown?.selectAll();
         })
         tagSelectContainer.createDiv({ cls: 'tag-select-container-separator' });
 
         new ButtonComponent(tagSelectContainer).setButtonText('None').onClick(() => {
-            tagDropdown.clear();
+            this.tagDropdown?.clear();
         })
         tagSelectContainer.createDiv({ cls: 'tag-select-container-separator' });
 
@@ -63,9 +74,9 @@ export class TagModal extends Modal {
                 name: tag.name,
                 description: tag.description
             }
-            tagDropdown.addOption(value, tag.name);
+            this.tagDropdown?.addOption(value, tag.name);
 
-            if (i == 0) tagDropdown.setValue(value)
+            if (i == 0) this.tagDropdown?.setValue(value)
         });
 
         const descriptionContainer = container.createDiv('tag-description-container');
@@ -80,26 +91,27 @@ export class TagModal extends Modal {
             }
         };
 
-        tagDropdown.onChange(updateDescription);
-        updateDescription(tagDropdown.getValue())
+        this.tagDropdown.onChange(updateDescription);
+        updateDescription(this.tagDropdown.getValue())
 
         const strategyContainer = container.createDiv({ cls: 'tag-strategy-container' });
 
-        const noteStrategyDropdown = new DropdownComponent(strategyContainer)
+        this.noteStrategyDropdown = new DropdownComponent(strategyContainer)
             .addOption('all_notes', "Tag all notes")
             .addOption('select_folder', "Tag folder")
             .addOption('this_note', "Tag active note")
             .setValue('all_notes')
             .onChange(() => {
-                if (noteStrategyDropdown.getValue() === 'select_folder') {
+                if (!this.noteStrategyDropdown) return;
+                if (this.noteStrategyDropdown.getValue() === 'select_folder') {
                     selectFolderButton.buttonEl.setAttribute('visible', '')
                 } else {
                     selectFolderButton.buttonEl.removeAttribute('visible')
                 }
 
-                updateStartButton();
+                this.updateStartButton();
             });
-        noteStrategyDropdown.selectEl.addClass('tag-note-strategy-dropdown');
+        this.noteStrategyDropdown.selectEl.addClass('tag-note-strategy-dropdown');
 
         const selectFolderButton = new ButtonComponent(strategyContainer)
             .setIcon('folder-search')
@@ -107,115 +119,120 @@ export class TagModal extends Modal {
             .onClick(() => {
                 new FolderSelectModal(this.app, (folder) => {
                     this.folderSelected = folder.path;
-                    updateStartButton();
+                    this.updateStartButton();
                 }).open();
             }).setClass('tag-select-folder-button');
 
-        const startButton = container.createEl('button', { cls: 'tag-start-button' });
+        this.startButton = container.createEl('button', { cls: 'tag-start-button' });
 
-        const updateStartButton = () => {
-            startButton.disabled = false;
-            const strategy = noteStrategyDropdown.getValue();
+        this.updateStartButton();
+
+        this.startButton.addEventListener('click', this.onStartClick);
+    }
+
+    private updateStartButton() {
+        if (!this.startButton || !this.noteStrategyDropdown) return;
+        (this.startButton as any).disabled = false;
+        const strategy = this.noteStrategyDropdown.getValue();
+        if (strategy == 'all_notes') {
+            const allNotes = this.plugin.tagUtils.getAllNotes()
+            this.startButton.setText(`Start tagging all ${allNotes.length} notes`)
+        } else if (strategy == 'select_folder') {
+            const folder = this.app.vault.getAbstractFileByPath(this.folderSelected);
+            this.startButton.setText(`Start tagging all notes in selected folder`)
+            if (!(folder instanceof TFolder)) return;
+            const notes = this.plugin.tagUtils.getAllNotesInFolder(folder);
+            if (notes.length == 1) {
+                this.startButton.setText(`Start tagging 1 note in '${this.folderSelected}'`)
+            } else {
+                this.startButton.setText(`Start tagging all ${notes.length} notes in '${this.folderSelected}'`)
+            }
+        } else {
+            const activeFile = this.app.workspace.getActiveFile();
+            if (activeFile && activeFile.extension === 'md') {
+                this.startButton.setText(`Start tagging '${activeFile.name}'`);
+            } else {
+                (this.startButton as any).disabled = true;
+                this.startButton.setText(`No open file`);
+            }
+        }
+    };
+
+    private onStartClick = async () => {
+        if (!this.tagDropdown || !this.startButton) return;
+        if (this.plugin.serialized.settings.tagDescriptions.length === 0) {
+            new Notice('Please add a tag in the settings first');
+            return;
+        }
+
+        const selectedTagObjects = this.tagDropdown.getValue();
+        if (selectedTagObjects.length === 0) {
+            new Notice('Please select a tag');
+            return;
+        }
+
+        (this.startButton as any).disabled = true;
+
+        try {
+            const strategy = this.noteStrategyDropdown?.getValue();
             if (strategy == 'all_notes') {
-                const allNotes = this.plugin.tagUtils.getAllNotes()
-                startButton.setText(`Start tagging all ${allNotes.length} notes`)
+                const allNotes = this.plugin.tagUtils.getAllNotes();
+                const notes = [];
+                for (const note of allNotes) {
+                    for (const tag of selectedTagObjects) {
+                        notes.push({ file: note, tag: tag });
+                    }
+                }
+
+                await this.plugin.operationProcessor.createOperation(notes);
+
+                new Notice(`Started tagging operation for all notes`);
+
             } else if (strategy == 'select_folder') {
                 const folder = this.app.vault.getAbstractFileByPath(this.folderSelected);
-                startButton.setText(`Start tagging all notes in selected folder`)
-                if (!(folder instanceof TFolder)) return;
-                const notes = this.plugin.tagUtils.getAllNotesInFolder(folder);
-                if (notes.length == 1) {
-                    startButton.setText(`Start tagging 1 note in '${this.folderSelected}'`)
-                } else {
-                    startButton.setText(`Start tagging all ${notes.length} notes in '${this.folderSelected}'`)
+                if (!(folder instanceof TFolder)) {
+                    new Notice("Folder is no longer valid")
+                    return;
                 }
-            } else {
+                const files = this.plugin.tagUtils.getAllNotesInFolder(folder);
+                const notes = []
+                for (const note of files) {
+                    for (const tag of selectedTagObjects) {
+                        notes.push({ file: note, tag: tag });
+                    }
+                }
+
+                await this.plugin.operationProcessor.createOperation(notes);
+
+                new Notice(`Started tagging operation for all notes in '${folder.path}'`);
+            } else if (strategy == 'this_note') {
                 const activeFile = this.app.workspace.getActiveFile();
-                if (activeFile && activeFile.extension === 'md') {
-                    startButton.setText(`Start tagging '${activeFile.name}'`);
-                } else {
-                    startButton.disabled = true;
-                    startButton.setText(`No open file`);
+
+                if (!activeFile) {
+                    new Notice('No file currently open');
+                    (this.startButton as any).disabled = false;
+                    this.updateStartButton();
+                    return;
                 }
-            }
-        };
-        updateStartButton();
 
-        startButton.addEventListener('click', async () => {
-            if (this.plugin.serialized.settings.tagDescriptions.length === 0) {
-                new Notice('Please add a tag in the settings first');
-                return;
-            }
-
-            const selectedTagObjects = tagDropdown.getValue();
-            if (selectedTagObjects.length === 0) {
-                new Notice('Please select a tag');
-                return;
-            }
-
-            startButton.disabled = true;
-
-            try {
-                const strategy = noteStrategyDropdown.getValue();
-                if (strategy == 'all_notes') {
-                    const allNotes = this.plugin.tagUtils.getAllNotes();
-                    const notes = [];
-                    for (const note of allNotes) {
-                        for (const tag of selectedTagObjects) {
-                            notes.push({ file: note, tag: tag });
-                        }
-                    }
-
-                    await this.plugin.operationProcessor.createOperation(notes);
-
-                    new Notice(`Started tagging operation for all notes`);
-
-                } else if (strategy == 'select_folder') {
-                    const folder = this.app.vault.getAbstractFileByPath(this.folderSelected);
-                    if (!(folder instanceof TFolder)) {
-                        new Notice("Folder is no longer valid")
-                        return;
-                    }
-                    const files = this.plugin.tagUtils.getAllNotesInFolder(folder);
-                    const notes = []
-                    for (const note of files) {
-                        for (const tag of selectedTagObjects) {
-                            notes.push({ file: note, tag: tag });
-                        }
-                    }
-
-                    await this.plugin.operationProcessor.createOperation(notes);
-
-                    new Notice(`Started tagging operation for all notes in '${folder.path}'`);
-                } else if (strategy == 'this_note') {
-                    const activeFile = this.app.workspace.getActiveFile();
-
-                    if (!activeFile) {
-                        new Notice('No file currently open');
-                        startButton.disabled = false;
-                        updateStartButton();
-                        return;
-                    }
-
-                    if (activeFile.extension !== 'md') {
-                        new Notice('Active file is not a markdown note');
-                        startButton.disabled = false;
-                        updateStartButton();
-                        return;
-                    }
-
-                    const notes = selectedTagObjects.map(tag => ({ file: activeFile, tag: tag }));
-                    await this.plugin.operationProcessor.createOperation(notes);
-
-                    new Notice(`Started tagging operation for ${activeFile.name}`);
+                if (activeFile.extension !== 'md') {
+                    new Notice('Active file is not a markdown note');
+                    (this.startButton as any).disabled = false;
+                    this.updateStartButton();
+                    return;
                 }
-            } catch (error) {
-                new Notice(`Error creating operations`);
-            } finally {
-                startButton.disabled = false;
-                updateStartButton();
+
+                const notes = selectedTagObjects.map(tag => ({ file: activeFile, tag: tag }));
+                await this.plugin.operationProcessor.createOperation(notes);
+
+                new Notice(`Started tagging operation for ${activeFile.name}`);
             }
-        });
+        } catch (error) {
+            new Notice(`Error creating operations`);
+        } finally {
+            (this.startButton as any).disabled = false;
+            this.updateStartButton();
+        }
     }
 
     private bottomSection(container: HTMLElement) {
@@ -229,14 +246,7 @@ export class TagModal extends Modal {
     private refreshOperations = () => {
         if (!this.operationsContainer) return;
 
-        const details = this.operationsContainer.querySelectorAll('details');
-        details.forEach(detail => {
-            if ((detail as any)._toggleHandler) {
-                detail.removeEventListener('toggle', (detail as any)._toggleHandler);
-                delete (detail as any)._toggleHandler;
-            }
-        });
-
+        this.clearRefreshEvents();
         this.operationsContainer.empty();
 
         if (!this.plugin.serialized.operations || this.plugin.serialized.operations.length === 0) {
@@ -265,8 +275,7 @@ export class TagModal extends Modal {
             }
         };
         details.addEventListener('toggle', toggleHandler);
-        details.dataset.operationId = operation.id;
-        (details as any)._toggleHandler = toggleHandler;
+        this.refreshEventListeners.push({ element: details, name: 'toggle', event: toggleHandler });
 
         const tagCount = operation.notes.map(n => n.tag.name + '|' + n.tag.description).unique().length;
         const noteCount = operation.notes.map(n => n.file).unique().length;
@@ -307,8 +316,7 @@ export class TagModal extends Modal {
             }
         };
         jsonDetails.addEventListener('toggle', configToggleHandler);
-        jsonDetails.dataset.operationId = operation.id;
-        (jsonDetails as any)._toggleHandler = configToggleHandler;
+        this.refreshEventListeners.push({ element: jsonDetails, event: configToggleHandler, name: 'toggle' });
 
         jsonDetails.createEl('summary', { text: 'JSON Config' });
         jsonDetails.open = configOpen;
