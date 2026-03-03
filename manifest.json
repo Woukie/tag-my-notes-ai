@@ -2,10 +2,10 @@
 	"id": "tag-my-notes-ai",
 	"name": "Tag My Notes (AI)",
 	"version": "1.0.0",
-	"minAppVersion": "0.15.0",
-	"description": "Tag every note in your vault with a tag based on a description",
+	"minAppVersion": "1.12.4",
+	"description": "Tag notes with your AI model of choice, choose which notes and which tags to consider and customize thought process to your preference.",
 	"author": "Woukie",
-	"authorUrl": "",
+	"authorUrl": "https://github.com/Woukie/",
 	"fundingUrl": "",
 	"isDesktopOnly": false
 }
