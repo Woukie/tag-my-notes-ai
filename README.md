@@ -41,4 +41,5 @@ Had to buy Vercel credit to test this so consider sponsoring if you find this us
 
 ## Misc
 
-[!IMPORTANT] This is a powerful tool. Adding more reasoning steps significantly increases token cost and tagging time. For processing a large number of files, it is best to use one reasoning step and to research the best model for your notes. Make sure to keep {description} and {tag} placeholders whenever you change reasoning steps.
+> [!IMPORTANT]
+> This is a powerful tool. Adding more reasoning steps significantly increases token cost and tagging time. For processing a large number of files, it is best to use one reasoning step and to research the best model for your notes. Make sure to keep {description} and {tag} placeholders whenever you change reasoning steps.
