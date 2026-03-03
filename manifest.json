@@ -3,7 +3,7 @@
 	"name": "Tag My Notes (AI)",
 	"version": "1.0.0",
 	"minAppVersion": "1.12.4",
-	"description": "Tag notes with your AI model of choice, choose which notes and which tags to consider and customize thought process to your preference.",
+	"description": "Tag notes with your chosen AI model, control which notes and tags to use, and modify the model's thought process to your liking.",
 	"author": "Woukie",
 	"authorUrl": "https://github.com/Woukie/",
 	"fundingUrl": "",
