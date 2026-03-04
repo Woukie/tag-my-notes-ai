@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile } from 'obsidian';
+import { Notice, Plugin, TFile, TFolder } from 'obsidian';
 import { Serialized } from './types';
 import { DEFAULT_SETTINGS } from './constants';
 import { TagModal } from './ui/tag-modal';
@@ -18,6 +18,7 @@ export default class TagMyNotesPlugin extends Plugin {
             new TagModal(this.app, this).open();
         });
 
+        // Quick tag active note
         this.registerEvent(
             this.app.workspace.on('editor-menu', (menu, editor, view) => {
                 const file = view.file;
@@ -36,6 +37,29 @@ export default class TagMyNotesPlugin extends Plugin {
                 }
             })
         );
+
+        // Quick tag folder
+        this.registerEvent(
+            this.app.workspace.on('file-menu', (menu, folder, source) => {
+                if (source !== "file-explorer-context-menu" || !(folder instanceof TFolder)) return;
+                menu.addItem((item) => {
+                    item.setTitle(`Tags all notes in '${folder.name == '' ? '/' : folder.name}'`)
+                        .setSection('Tag my notes')
+                        .setIcon('tags')
+                        .onClick(async () => {
+                            const files = this.tagUtils.getAllNotesInFolder(folder);
+                            new Notice(`Started tagging operation for '${folder.name}' with all tags`)
+                            const notes = []
+                            for (const note of files) {
+                                for (const tag of this.serialized.settings.tagDescriptions) {
+                                    notes.push({ file: note, tag: tag });
+                                }
+                            }
+                            await this.operationProcessor.createOperation(notes);
+                        });
+                });
+            })
+        )
 
         this.addSettingTab(new SettingsTab(this.app, this));
 
