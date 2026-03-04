@@ -165,6 +165,41 @@ export class SettingsTab extends PluginSettingTab {
                         }))
                 );
                 break;
+            case 'mistral':
+                providerGroup.addSetting(s => s
+                    .setName('Mistral API key')
+                    .setDesc('Your Mistral API key.')
+                    .addText(text => text
+                        .setPlaceholder('...')
+                        .setValue(this.plugin.serialized.settings.mistralSettings.apiKey)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.mistralSettings.apiKey = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                providerGroup.addSetting(s => s
+                    .setName('Mistral model name')
+                    .setDesc('Model name, e.g., "mistral-large-latest", "mistral-small-2506".')
+                    .addText(text => text
+                        .setPlaceholder('mistral-large-latest')
+                        .setValue(this.plugin.serialized.settings.mistralSettings.modelId)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.mistralSettings.modelId = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                providerGroup.addSetting(s => s
+                    .setName('Mistral base URL')
+                    .setDesc('Base url for Mistral, leave blank for default.')
+                    .addText(text => text
+                        .setPlaceholder('http://localhost:11434')
+                        .setValue(this.plugin.serialized.settings.mistralSettings.baseUrl)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.mistralSettings.baseUrl = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                break;
             default:
                 break;
         }

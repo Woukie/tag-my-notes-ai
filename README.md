@@ -23,7 +23,7 @@ Settings contains model & params, resoning steps and tag list
 - Tagging operations persist through closing and re-opening of the application
 - View, cancel and delete tagging operations
 - Customise the AIs train-of-thought to get more accurate results
-- Supports the Vercel Gateway, OpenAI and Ollama with custom endpoints
+- Supports the Vercel Gateway, OpenAI, Ollama, OpenRouter and Mistral with custom endpoints
 
 ## Usage
 
@@ -50,4 +50,4 @@ Had to buy Vercel credit to test this so consider sponsoring if you find this us
 ## Attribution
 
 - Uses the JS AI API [here](https://www.npmjs.com/package/ai)
-- Uses the libraries [ollama-ai-provider-v2](https://www.npmjs.com/package/ollama-ai-provider-v2), [@ai-sdk/openai](https://www.npmjs.com/package/@ai-sdk/openai) and [@openrouter/ai-sdk-provider](https://www.npmjs.com/package/@openrouter/ai-sdk-provider) when not using the Vercel Gateway
+- Among libraries from the ai-sdk, the libraries [ollama-ai-provider-v2](https://www.npmjs.com/package/ollama-ai-provider-v2) and [@openrouter/ai-sdk-provider](https://www.npmjs.com/package/@openrouter/ai-sdk-provider) are used to add support for models.

@@ -34,8 +34,13 @@ Tag description: {description}`
     },
     openRouterSettings: {
         apiKey: '',
-        baseUrl: 'http://localhost:11434/api',
+        baseUrl: '',
         modelId: 'openai/gpt-4o-mini'
+    },
+    mistralSettings: {
+        apiKey: '',
+        baseUrl: '',
+        modelId: 'mistral-large-latest'
     },
     confidenceDescription: 'Your confidence level from 0 to 1',
     shouldTagDescription: 'Whether the note should have this tag'

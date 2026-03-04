@@ -7,6 +7,7 @@
 		"build": "node build.mjs"
 	},
 	"dependencies": {
+		"@ai-sdk/mistral": "^3.0.22",
 		"@ai-sdk/openai": "^3.0.37",
 		"@openrouter/ai-sdk-provider": "^2.2.3",
 		"ai": "^6.0.105",

@@ -6,6 +6,7 @@ import { createOllama, ollama } from 'ollama-ai-provider-v2';
 import { z } from 'zod';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { createMistral } from '@ai-sdk/mistral';
 
 export interface TagDecision {
     shouldTag: boolean;
@@ -110,6 +111,14 @@ export class AIHandler {
                     baseURL: openaiSettings.baseUrl === '' ? undefined : openaiSettings.baseUrl,
                 })
                 return openAI(openaiSettings.modelId);
+            case 'mistral':
+                var mistralSettings = operation.config.mistralSettings;
+                const mistral = createMistral({
+                    apiKey: mistralSettings.apiKey === '' ? undefined : mistralSettings.apiKey,
+                    baseURL: mistralSettings.baseUrl === '' ? undefined : mistralSettings.baseUrl,
+                })
+                return mistral(mistralSettings.modelId);
+                break;
             default:
                 var gatewaySettings = operation.config.gatewaySettings;
                 const gateway = createGateway({
