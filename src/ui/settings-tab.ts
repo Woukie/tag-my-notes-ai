@@ -12,6 +12,7 @@ export class SettingsTab extends PluginSettingTab {
 
     display(): void {
         const { containerEl } = this;
+        const settings = this.plugin.serialized.settings;
         containerEl.empty();
 
         const providerGroup = new SettingGroup(containerEl);
@@ -26,16 +27,16 @@ export class SettingsTab extends PluginSettingTab {
                 .addOption('openai', 'OpenAI')
                 .addOption('open_router', 'OpenRouter')
                 .addOption('mistral', 'Mistral')
-                .setValue(this.plugin.serialized.settings.aiProvider)
+                .setValue(settings.aiProvider)
                 .onChange(async (value) => {
                     const v = value as 'vercel_gateway' | 'ollama' | 'openai' | 'open_router' | 'mistral';
-                    this.plugin.serialized.settings.aiProvider = v;
+                    settings.aiProvider = v;
                     await this.plugin.savePersistent();
                     this.display();
                 }))
         );
 
-        const prov = this.plugin.serialized.settings.aiProvider;
+        const prov = settings.aiProvider;
 
         switch (prov) {
             case 'vercel_gateway':
@@ -44,9 +45,9 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Your Vercel AI Gateway API key.')
                     .addText(text => text
                         .setPlaceholder('vck_...')
-                        .setValue(this.plugin.serialized.settings.gatewaySettings.apiKey)
+                        .setValue(settings.gatewaySettings.apiKey)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.gatewaySettings.apiKey = value;
+                            settings.gatewaySettings.apiKey = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -55,9 +56,9 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Model name with provider prefix, e.g., "openai/gpt-4o", "anthropic/claude-3", "google/gemini-pro".')
                     .addText(text => text
                         .setPlaceholder('openai/gpt-4o')
-                        .setValue(this.plugin.serialized.settings.gatewaySettings.modelId)
+                        .setValue(settings.gatewaySettings.modelId)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.gatewaySettings.modelId = value;
+                            settings.gatewaySettings.modelId = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -66,9 +67,9 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Base url for Vercel, leave blank for default.')
                     .addText(text => text
                         .setPlaceholder('https://ai-gateway.vercel.sh/v3/ai')
-                        .setValue(this.plugin.serialized.settings.gatewaySettings.baseUrl)
+                        .setValue(settings.gatewaySettings.baseUrl)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.gatewaySettings.baseUrl = value;
+                            settings.gatewaySettings.baseUrl = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -79,9 +80,9 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Ollama model name (e.g., llama3, mistral).')
                     .addText(text => text
                         .setPlaceholder('llama3')
-                        .setValue(this.plugin.serialized.settings.ollamaSettings.modelId)
+                        .setValue(settings.ollamaSettings.modelId)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.ollamaSettings.modelId = value;
+                            settings.ollamaSettings.modelId = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -90,21 +91,22 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Base url for Ollama, leave blank for default.')
                     .addText(text => text
                         .setPlaceholder('http://localhost:11434')
-                        .setValue(this.plugin.serialized.settings.ollamaSettings.baseUrl)
+                        .setValue(settings.ollamaSettings.baseUrl)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.ollamaSettings.baseUrl = value;
+                            settings.ollamaSettings.baseUrl = value;
                             await this.plugin.savePersistent();
                         }))
                 );
+                break;
             case 'openai':
                 providerGroup.addSetting(s => s
                     .setName('OpenAI API key')
                     .setDesc('Your OpenAI AI API key.')
                     .addText(text => text
                         .setPlaceholder('sk-...')
-                        .setValue(this.plugin.serialized.settings.openaiSettings.apiKey)
+                        .setValue(settings.openaiSettings.apiKey)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.openaiSettings.apiKey = value;
+                            settings.openaiSettings.apiKey = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -113,9 +115,9 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Model name, e.g., "gpt-4o".')
                     .addText(text => text
                         .setPlaceholder('gpt-4o')
-                        .setValue(this.plugin.serialized.settings.openaiSettings.modelId)
+                        .setValue(settings.openaiSettings.modelId)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.openaiSettings.modelId = value;
+                            settings.openaiSettings.modelId = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -124,9 +126,9 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Base url for OpenAI, leave blank for default.')
                     .addText(text => text
                         .setPlaceholder('http://localhost:11434')
-                        .setValue(this.plugin.serialized.settings.openaiSettings.baseUrl)
+                        .setValue(settings.openaiSettings.baseUrl)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.openaiSettings.baseUrl = value;
+                            settings.openaiSettings.baseUrl = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -137,9 +139,9 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Your OpenRouter API key.')
                     .addText(text => text
                         .setPlaceholder('sk-...')
-                        .setValue(this.plugin.serialized.settings.openRouterSettings.apiKey)
+                        .setValue(settings.openRouterSettings.apiKey)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.openRouterSettings.apiKey = value;
+                            settings.openRouterSettings.apiKey = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -148,9 +150,9 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Model name with provider prefix, e.g., "openai/gpt-4o", "anthropic/claude-3", "google/gemini-pro".')
                     .addText(text => text
                         .setPlaceholder('openai/gpt-4o-mini')
-                        .setValue(this.plugin.serialized.settings.openRouterSettings.modelId)
+                        .setValue(settings.openRouterSettings.modelId)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.openRouterSettings.modelId = value;
+                            settings.openRouterSettings.modelId = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -159,9 +161,9 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Base url for OpenRouter, leave blank for default.')
                     .addText(text => text
                         .setPlaceholder('http://localhost:11434')
-                        .setValue(this.plugin.serialized.settings.openRouterSettings.baseUrl)
+                        .setValue(settings.openRouterSettings.baseUrl)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.openRouterSettings.baseUrl = value;
+                            settings.openRouterSettings.baseUrl = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -172,9 +174,9 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Your Mistral API key.')
                     .addText(text => text
                         .setPlaceholder('...')
-                        .setValue(this.plugin.serialized.settings.mistralSettings.apiKey)
+                        .setValue(settings.mistralSettings.apiKey)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.mistralSettings.apiKey = value;
+                            settings.mistralSettings.apiKey = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -183,9 +185,9 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Model name, e.g., "mistral-large-latest", "mistral-small-2506".')
                     .addText(text => text
                         .setPlaceholder('mistral-large-latest')
-                        .setValue(this.plugin.serialized.settings.mistralSettings.modelId)
+                        .setValue(settings.mistralSettings.modelId)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.mistralSettings.modelId = value;
+                            settings.mistralSettings.modelId = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -194,9 +196,9 @@ export class SettingsTab extends PluginSettingTab {
                     .setDesc('Base url for Mistral, leave blank for default.')
                     .addText(text => text
                         .setPlaceholder('http://localhost:11434')
-                        .setValue(this.plugin.serialized.settings.mistralSettings.baseUrl)
+                        .setValue(settings.mistralSettings.baseUrl)
                         .onChange(async (value) => {
-                            this.plugin.serialized.settings.mistralSettings.baseUrl = value;
+                            settings.mistralSettings.baseUrl = value;
                             await this.plugin.savePersistent();
                         }))
                 );
@@ -213,10 +215,10 @@ export class SettingsTab extends PluginSettingTab {
             .setDesc('Controls randomness (0 = deterministic, 1 = creative).')
             .addSlider(slider => slider
                 .setLimits(0, 1, 0.1)
-                .setValue(this.plugin.serialized.settings.temperature)
+                .setValue(settings.temperature)
                 .setDynamicTooltip()
                 .onChange(async (value) => {
-                    this.plugin.serialized.settings.temperature = value;
+                    settings.temperature = value;
                     await this.plugin.savePersistent();
                 }))
         );
@@ -226,11 +228,11 @@ export class SettingsTab extends PluginSettingTab {
             .setDesc('Maximum tokens in the response.')
             .addText(text => text
                 .setPlaceholder('200')
-                .setValue(String(this.plugin.serialized.settings.maxTokens))
+                .setValue(String(settings.maxTokens))
                 .onChange(async (value) => {
                     const numValue = parseInt(value);
                     if (!isNaN(numValue) && numValue > 0) {
-                        this.plugin.serialized.settings.maxTokens = numValue;
+                        settings.maxTokens = numValue;
                         await this.plugin.savePersistent();
                     }
                 }))
@@ -241,10 +243,10 @@ export class SettingsTab extends PluginSettingTab {
             .setDesc('Minimum confidence score to apply tags (0.0 - 1.0).')
             .addSlider(slider => slider
                 .setLimits(0, 1, 0.05)
-                .setValue(this.plugin.serialized.settings.confidenceThreshold)
+                .setValue(settings.confidenceThreshold)
                 .setDynamicTooltip()
                 .onChange(async (value) => {
-                    this.plugin.serialized.settings.confidenceThreshold = value;
+                    settings.confidenceThreshold = value;
                     await this.plugin.savePersistent();
                 }))
         );
@@ -253,9 +255,9 @@ export class SettingsTab extends PluginSettingTab {
             .setName('Should tag description')
             .setDesc('Define what the \'shouldTag\' parameter means in the decision step.')
             .addTextArea(dropdown => dropdown
-                .setValue(this.plugin.serialized.settings.shouldTagDescription)
+                .setValue(settings.shouldTagDescription)
                 .onChange(async (value) => {
-                    this.plugin.serialized.settings.shouldTagDescription = value;
+                    settings.shouldTagDescription = value;
                     await this.plugin.savePersistent();
                 }))
         );
@@ -264,9 +266,9 @@ export class SettingsTab extends PluginSettingTab {
             .setName('Confidence description')
             .setDesc('Define what the \'confidence\' parameter means in the decision step.')
             .addTextArea(dropdown => dropdown
-                .setValue(this.plugin.serialized.settings.confidenceDescription)
+                .setValue(settings.confidenceDescription)
                 .onChange(async (value) => {
-                    this.plugin.serialized.settings.confidenceDescription = value;
+                    settings.confidenceDescription = value;
                     await this.plugin.savePersistent();
                 }))
         );
@@ -275,25 +277,25 @@ export class SettingsTab extends PluginSettingTab {
             .setName('Enable context clamping')
             .setDesc('Limit the amount of context sent to the AI.')
             .addToggle(toggle => toggle
-                .setValue(this.plugin.serialized.settings.contextClamping.enabled)
+                .setValue(settings.contextClamping.enabled)
                 .onChange(async (value) => {
-                    this.plugin.serialized.settings.contextClamping.enabled = value;
+                    settings.contextClamping.enabled = value;
                     await this.plugin.savePersistent();
                     this.display();
                 }))
         );
 
-        if (this.plugin.serialized.settings.contextClamping.enabled) {
+        if (settings.contextClamping.enabled) {
             paramsGroup.addSetting(s => s
                 .setName('Max content length')
                 .setDesc('Maximum number of characters to send to the AI.')
                 .addText(text => text
                     .setPlaceholder('3000')
-                    .setValue(String(this.plugin.serialized.settings.contextClamping.maxContentLength))
+                    .setValue(String(settings.contextClamping.maxContentLength))
                     .onChange(async (value) => {
                         const numValue = parseInt(value);
                         if (!isNaN(numValue) && numValue > 0) {
-                            this.plugin.serialized.settings.contextClamping.maxContentLength = numValue;
+                            settings.contextClamping.maxContentLength = numValue;
                             await this.plugin.savePersistent();
                         }
                     }))
@@ -305,10 +307,10 @@ export class SettingsTab extends PluginSettingTab {
                 .addDropdown(dropdown => dropdown
                     .addOption('beginning', 'Keep beginning')
                     .addOption('end', 'Keep end')
-                    .setValue(this.plugin.serialized.settings.contextClamping.truncationStrategy)
+                    .setValue(settings.contextClamping.truncationStrategy)
                     .onChange(async (value) => {
                         const v = value as 'beginning' | 'end';
-                        this.plugin.serialized.settings.contextClamping.truncationStrategy = v;
+                        settings.contextClamping.truncationStrategy = v;
                         await this.plugin.savePersistent();
                     }))
             );
@@ -325,20 +327,20 @@ export class SettingsTab extends PluginSettingTab {
                 .setCta()
                 .onClick(() => {
                     let maxNumber = 0;
-                    this.plugin.serialized.settings.tagDescriptions.forEach((tag) => {
+                    settings.tagDescriptions.forEach((tag) => {
                         if (tag.name.startsWith('new_tag_')) {
                             const num = parseInt(tag.name.split('_')[2]);
                             if (!isNaN(num) && num > maxNumber) maxNumber = num;
                         }
                     });
                     const name = `new_tag_${maxNumber + 1}`;
-                    this.plugin.serialized.settings.tagDescriptions.push({ name, description: '' });
+                    settings.tagDescriptions.push({ name, description: '' });
                     this.plugin.savePersistent();
                     this.display();
                 }))
         );
 
-        this.plugin.serialized.settings.tagDescriptions.forEach((tag, id) => {
+        settings.tagDescriptions.forEach((tag, id) => {
             tagGroup.addSetting(s => {
                 s.setName(tag.name)
                     .addTextArea(c => c
@@ -354,7 +356,7 @@ export class SettingsTab extends PluginSettingTab {
                         .setTooltip('Delete')
                         .setWarning()
                         .onClick(async () => {
-                            this.plugin.serialized.settings.tagDescriptions.splice(id, 1);
+                            settings.tagDescriptions.splice(id, 1);
                             await this.plugin.savePersistent();
                             this.display();
                         })
@@ -389,15 +391,15 @@ export class SettingsTab extends PluginSettingTab {
                 .setButtonText('Add step')
                 .setCta()
                 .onClick(() => {
-                    this.plugin.serialized.settings.reasoningSteps.push({ prompt: '' });
+                    settings.reasoningSteps.push({ prompt: '' });
                     this.plugin.savePersistent();
                     this.display();
                 }))
         );
 
-        this.plugin.serialized.settings.reasoningSteps.forEach((step, index) => {
+        settings.reasoningSteps.forEach((step, index) => {
             reasoningGroup.addSetting(s => {
-                const finalStep = index === this.plugin.serialized.settings.reasoningSteps.length - 1;
+                const finalStep = index === settings.reasoningSteps.length - 1;
                 const firstStep = index === 0;
                 const name = finalStep ? 'Decision step' : firstStep ? 'Context step' : `Step ${index + 1}`
                 const desc = finalStep ? 'The reponse to this step will be the decision as a JSON object containing values for \'shouldTag\' and \'confidence\'.' : firstStep ? 'The first question of the reasoning chain, placeholders {tag} and {description} will be substituted. The note is attached separately.' : `Intermediary reasoning step.`
@@ -416,7 +418,7 @@ export class SettingsTab extends PluginSettingTab {
                         .setTooltip('Move up')
                         .onClick(async () => {
                             if (index > 0) {
-                                const steps = this.plugin.serialized.settings.reasoningSteps;
+                                const steps = settings.reasoningSteps;
                                 [steps[index - 1], steps[index]] = [steps[index], steps[index - 1]];
                                 await this.plugin.savePersistent();
                                 this.display();
@@ -428,21 +430,21 @@ export class SettingsTab extends PluginSettingTab {
                         .setIcon('arrow-down')
                         .setTooltip('Move down')
                         .onClick(async () => {
-                            if (index < this.plugin.serialized.settings.reasoningSteps.length - 1) {
-                                const steps = this.plugin.serialized.settings.reasoningSteps;
+                            if (index < settings.reasoningSteps.length - 1) {
+                                const steps = settings.reasoningSteps;
                                 [steps[index], steps[index + 1]] = [steps[index + 1], steps[index]];
                                 await this.plugin.savePersistent();
                                 this.display();
                             }
                         })
-                        .setDisabled(index === this.plugin.serialized.settings.reasoningSteps.length - 1)
+                        .setDisabled(index === settings.reasoningSteps.length - 1)
                     )
                     .addButton(button => button
                         .setIcon('trash')
                         .setTooltip('Delete')
                         .setWarning()
                         .onClick(async () => {
-                            this.plugin.serialized.settings.reasoningSteps.splice(index, 1);
+                            settings.reasoningSteps.splice(index, 1);
                             await this.plugin.savePersistent();
                             this.display();
                         })
