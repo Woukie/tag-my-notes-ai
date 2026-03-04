@@ -24,9 +24,10 @@ export class SettingsTab extends PluginSettingTab {
                 .addOption('vercel_gateway', 'Vercel AI Gateway')
                 .addOption('ollama', 'Ollama')
                 .addOption('openai', 'OpenAI')
+                .addOption('open_router', 'OpenRouter')
                 .setValue(this.plugin.serialized.settings.aiProvider)
                 .onChange(async (value) => {
-                    const v = value as 'vercel_gateway' | 'ollama' | 'openai';
+                    const v = value as 'vercel_gateway' | 'ollama' | 'openai' | 'open_router';
                     this.plugin.serialized.settings.aiProvider = v;
                     await this.plugin.savePersistent();
                     this.display();
@@ -35,97 +36,137 @@ export class SettingsTab extends PluginSettingTab {
 
         const prov = this.plugin.serialized.settings.aiProvider;
 
-        if (prov === 'vercel_gateway') {
-            providerGroup.addSetting(s => s
-                .setName('Vercel API key')
-                .setDesc('Your Vercel AI Gateway API key.')
-                .addText(text => text
-                    .setPlaceholder('vck_...')
-                    .setValue(this.plugin.serialized.settings.gatewaySettings.apiKey)
-                    .onChange(async (value) => {
-                        this.plugin.serialized.settings.gatewaySettings.apiKey = value;
-                        await this.plugin.savePersistent();
-                    }))
-            );
-            providerGroup.addSetting(s => s
-                .setName('Vercel model ID')
-                .setDesc('Model name with provider prefix, e.g., "openai/gpt-4o", "anthropic/claude-3", "google/gemini-pro".')
-                .addText(text => text
-                    .setPlaceholder('openai/gpt-4o')
-                    .setValue(this.plugin.serialized.settings.gatewaySettings.modelId)
-                    .onChange(async (value) => {
-                        this.plugin.serialized.settings.gatewaySettings.modelId = value;
-                        await this.plugin.savePersistent();
-                    }))
-            );
-            providerGroup.addSetting(s => s
-                .setName('Vercel base URL')
-                .setDesc('Base url for Vercel, leave blank for default.')
-                .addText(text => text
-                    .setPlaceholder('https://ai-gateway.vercel.sh/v3/ai')
-                    .setValue(this.plugin.serialized.settings.gatewaySettings.baseUrl)
-                    .onChange(async (value) => {
-                        this.plugin.serialized.settings.gatewaySettings.baseUrl = value;
-                        await this.plugin.savePersistent();
-                    }))
-            );
-        } else if (prov === 'ollama') {
-            providerGroup.addSetting(s => s
-                .setName('Ollama model name')
-                .setDesc('Ollama model name (e.g., llama3, mistral).')
-                .addText(text => text
-                    .setPlaceholder('llama3')
-                    .setValue(this.plugin.serialized.settings.ollamaSettings.modelId)
-                    .onChange(async (value) => {
-                        this.plugin.serialized.settings.ollamaSettings.modelId = value;
-                        await this.plugin.savePersistent();
-                    }))
-            );
-            providerGroup.addSetting(s => s
-                .setName('Ollama base URL')
-                .setDesc('Base url for Ollama, leave blank for default.')
-                .addText(text => text
-                    .setPlaceholder('http://localhost:11434')
-                    .setValue(this.plugin.serialized.settings.ollamaSettings.baseUrl)
-                    .onChange(async (value) => {
-                        this.plugin.serialized.settings.ollamaSettings.baseUrl = value;
-                        await this.plugin.savePersistent();
-                    }))
-            );
-        } else if (prov === 'openai') {
-            providerGroup.addSetting(s => s
-                .setName('OpenAI API key')
-                .setDesc('Your OpenAI AI Gateway API key.')
-                .addText(text => text
-                    .setPlaceholder('sk-...')
-                    .setValue(this.plugin.serialized.settings.openaiSettings.apiKey)
-                    .onChange(async (value) => {
-                        this.plugin.serialized.settings.openaiSettings.apiKey = value;
-                        await this.plugin.savePersistent();
-                    }))
-            );
-            providerGroup.addSetting(s => s
-                .setName('OpenAI model name')
-                .setDesc('Model name, e.g., "gpt-4o".')
-                .addText(text => text
-                    .setPlaceholder('gpt-4o')
-                    .setValue(this.plugin.serialized.settings.openaiSettings.modelId)
-                    .onChange(async (value) => {
-                        this.plugin.serialized.settings.openaiSettings.modelId = value;
-                        await this.plugin.savePersistent();
-                    }))
-            );
-            providerGroup.addSetting(s => s
-                .setName('OpenAI base URL')
-                .setDesc('Base url for OpenAI, leave blank for default.')
-                .addText(text => text
-                    .setPlaceholder('http://localhost:11434')
-                    .setValue(this.plugin.serialized.settings.openaiSettings.baseUrl)
-                    .onChange(async (value) => {
-                        this.plugin.serialized.settings.openaiSettings.baseUrl = value;
-                        await this.plugin.savePersistent();
-                    }))
-            );
+        switch (prov) {
+            case 'vercel_gateway':
+                providerGroup.addSetting(s => s
+                    .setName('Vercel API key')
+                    .setDesc('Your Vercel AI Gateway API key.')
+                    .addText(text => text
+                        .setPlaceholder('vck_...')
+                        .setValue(this.plugin.serialized.settings.gatewaySettings.apiKey)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.gatewaySettings.apiKey = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                providerGroup.addSetting(s => s
+                    .setName('Vercel model ID')
+                    .setDesc('Model name with provider prefix, e.g., "openai/gpt-4o", "anthropic/claude-3", "google/gemini-pro".')
+                    .addText(text => text
+                        .setPlaceholder('openai/gpt-4o')
+                        .setValue(this.plugin.serialized.settings.gatewaySettings.modelId)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.gatewaySettings.modelId = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                providerGroup.addSetting(s => s
+                    .setName('Vercel base URL')
+                    .setDesc('Base url for Vercel, leave blank for default.')
+                    .addText(text => text
+                        .setPlaceholder('https://ai-gateway.vercel.sh/v3/ai')
+                        .setValue(this.plugin.serialized.settings.gatewaySettings.baseUrl)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.gatewaySettings.baseUrl = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                break;
+            case 'ollama':
+                providerGroup.addSetting(s => s
+                    .setName('Ollama model name')
+                    .setDesc('Ollama model name (e.g., llama3, mistral).')
+                    .addText(text => text
+                        .setPlaceholder('llama3')
+                        .setValue(this.plugin.serialized.settings.ollamaSettings.modelId)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.ollamaSettings.modelId = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                providerGroup.addSetting(s => s
+                    .setName('Ollama base URL')
+                    .setDesc('Base url for Ollama, leave blank for default.')
+                    .addText(text => text
+                        .setPlaceholder('http://localhost:11434')
+                        .setValue(this.plugin.serialized.settings.ollamaSettings.baseUrl)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.ollamaSettings.baseUrl = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+            case 'openai':
+                providerGroup.addSetting(s => s
+                    .setName('OpenAI API key')
+                    .setDesc('Your OpenAI AI API key.')
+                    .addText(text => text
+                        .setPlaceholder('sk-...')
+                        .setValue(this.plugin.serialized.settings.openaiSettings.apiKey)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.openaiSettings.apiKey = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                providerGroup.addSetting(s => s
+                    .setName('OpenAI model name')
+                    .setDesc('Model name, e.g., "gpt-4o".')
+                    .addText(text => text
+                        .setPlaceholder('gpt-4o')
+                        .setValue(this.plugin.serialized.settings.openaiSettings.modelId)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.openaiSettings.modelId = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                providerGroup.addSetting(s => s
+                    .setName('OpenAI base URL')
+                    .setDesc('Base url for OpenAI, leave blank for default.')
+                    .addText(text => text
+                        .setPlaceholder('http://localhost:11434')
+                        .setValue(this.plugin.serialized.settings.openaiSettings.baseUrl)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.openaiSettings.baseUrl = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                break;
+            case 'open_router':
+                providerGroup.addSetting(s => s
+                    .setName('OpenRouter API key')
+                    .setDesc('Your OpenRouter API key.')
+                    .addText(text => text
+                        .setPlaceholder('sk-...')
+                        .setValue(this.plugin.serialized.settings.openRouterSettings.apiKey)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.openRouterSettings.apiKey = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                providerGroup.addSetting(s => s
+                    .setName('OpenRouter model ID')
+                    .setDesc('Model name with provider prefix, e.g., "openai/gpt-4o", "anthropic/claude-3", "google/gemini-pro".')
+                    .addText(text => text
+                        .setPlaceholder('openai/gpt-4o-mini')
+                        .setValue(this.plugin.serialized.settings.openRouterSettings.modelId)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.openRouterSettings.modelId = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                providerGroup.addSetting(s => s
+                    .setName('OpenRouter base URL')
+                    .setDesc('Base url for OpenRouter, leave blank for default.')
+                    .addText(text => text
+                        .setPlaceholder('http://localhost:11434')
+                        .setValue(this.plugin.serialized.settings.openRouterSettings.baseUrl)
+                        .onChange(async (value) => {
+                            this.plugin.serialized.settings.openRouterSettings.baseUrl = value;
+                            await this.plugin.savePersistent();
+                        }))
+                );
+                break;
+            default:
+                break;
         }
 
         const paramsGroup = new SettingGroup(containerEl);

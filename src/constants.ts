@@ -19,8 +19,8 @@ Tag description: {description}`
     },
     aiProvider: 'vercel_gateway',
     openaiSettings: {
-        apiKey: '',
         baseUrl: '',
+        apiKey: '',
         modelId: 'gpt-4o-mini'
     },
     gatewaySettings: {
@@ -31,6 +31,11 @@ Tag description: {description}`
     ollamaSettings: {
         baseUrl: 'http://localhost:11434/api',
         modelId: 'llama3'
+    },
+    openRouterSettings: {
+        apiKey: '',
+        baseUrl: 'http://localhost:11434/api',
+        modelId: 'openai/gpt-4o-mini'
     },
     confidenceDescription: 'Your confidence level from 0 to 1',
     shouldTagDescription: 'Whether the note should have this tag'

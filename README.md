@@ -50,4 +50,4 @@ Had to buy Vercel credit to test this so consider sponsoring if you find this us
 ## Attribution
 
 - Uses the JS AI API [here](https://www.npmjs.com/package/ai)
-- Uses the libraries [ollama-ai-provider-v2](https://www.npmjs.com/package/ollama-ai-provider-v2) and [@ai-sdk/openai](https://www.npmjs.com/package/@ai-sdk/openai) when not using the Vercel Gateway
+- Uses the libraries [ollama-ai-provider-v2](https://www.npmjs.com/package/ollama-ai-provider-v2), [@ai-sdk/openai](https://www.npmjs.com/package/@ai-sdk/openai) and [@openrouter/ai-sdk-provider](https://www.npmjs.com/package/@openrouter/ai-sdk-provider) when not using the Vercel Gateway

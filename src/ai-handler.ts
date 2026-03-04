@@ -5,6 +5,7 @@ import { createGateway, generateText, LanguageModel, ModelMessage, Output } from
 import { createOllama, ollama } from 'ollama-ai-provider-v2';
 import { z } from 'zod';
 import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 export interface TagDecision {
     shouldTag: boolean;
@@ -95,6 +96,13 @@ export class AIHandler {
                     baseURL: ollamaSettings.baseUrl === '' ? undefined : ollamaSettings.baseUrl,
                 });
                 return ollama(ollamaSettings.modelId);
+            case 'open_router':
+                var openRouterSettings = operation.config.openRouterSettings;
+                const openRouter = createOpenRouter({
+                    baseURL: openRouterSettings.baseUrl === '' ? undefined : openRouterSettings.baseUrl,
+                    apiKey: openRouterSettings.apiKey === '' ? undefined : openRouterSettings.apiKey,
+                });
+                return openRouter(openRouterSettings.modelId);
             case 'openai':
                 var openaiSettings = operation.config.openaiSettings;
                 const openAI = createOpenAI({

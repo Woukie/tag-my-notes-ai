@@ -19,7 +19,7 @@ export interface Settings {
         maxContentLength: number;
         truncationStrategy: 'beginning' | 'end';
     };
-    aiProvider: 'vercel_gateway' | 'ollama' | 'openai'
+    aiProvider: 'vercel_gateway' | 'ollama' | 'openai' | 'open_router'
     openaiSettings: {
         baseUrl: string,
         apiKey: string,
@@ -32,6 +32,11 @@ export interface Settings {
     };
     ollamaSettings: {
         baseUrl: string,
+        modelId: string
+    };
+    openRouterSettings: {
+        baseUrl: string,
+        apiKey: string,
         modelId: string
     };
     shouldTagDescription: string;
