@@ -25,9 +25,10 @@ export class SettingsTab extends PluginSettingTab {
                 .addOption('ollama', 'Ollama')
                 .addOption('openai', 'OpenAI')
                 .addOption('open_router', 'OpenRouter')
+                .addOption('mistral', 'Mistral')
                 .setValue(this.plugin.serialized.settings.aiProvider)
                 .onChange(async (value) => {
-                    const v = value as 'vercel_gateway' | 'ollama' | 'openai' | 'open_router';
+                    const v = value as 'vercel_gateway' | 'ollama' | 'openai' | 'open_router' | 'mistral';
                     this.plugin.serialized.settings.aiProvider = v;
                     await this.plugin.savePersistent();
                     this.display();
