@@ -11,10 +11,10 @@ Tag description: {description}`
         }
     ],
     temperature: 0.3,
-    maxTokens: 200,
+    maxTokens: 1000,
     contextClamping: {
         enabled: false,
-        maxContentLength: 3000,
+        maxContentLength: 1500,
         truncationStrategy: 'beginning',
     },
     tagsPerRequest: 1,
