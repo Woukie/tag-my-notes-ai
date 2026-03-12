@@ -316,6 +316,18 @@ export class SettingsTab extends PluginSettingTab {
             );
         }
 
+        paramsGroup.addSetting(s => s
+            .setName('Number of tags per request')
+            .setDesc('Max number of tags to process together per request. Set to 0 to process every tag on a note in one request. Remember to tweak the reasoning prompts when changing this to or from \'1\'')
+            .addText(text => text
+                .setValue(settings.tagsPerRequest.toString())
+                .onChange(async value => {
+                    settings.tagsPerRequest = Number.parseInt(value);
+                    await this.plugin.savePersistent();
+                })
+            )
+        );
+
         const tagGroup = new SettingGroup(containerEl);
         tagGroup.setHeading("Tag descriptions");
 
@@ -402,7 +414,10 @@ export class SettingsTab extends PluginSettingTab {
                 const finalStep = index === settings.reasoningSteps.length - 1;
                 const firstStep = index === 0;
                 const name = finalStep ? 'Decision step' : firstStep ? 'Context step' : `Step ${index + 1}`
-                const desc = finalStep ? 'The reponse to this step will be the decision as a JSON object containing values for \'shouldTag\' and \'confidence\'.' : firstStep ? 'The first question of the reasoning chain, placeholders {tag} and {description} will be substituted. The note is attached separately.' : `Intermediary reasoning step.`
+                var desc = finalStep ? 'The reponse to this step will be the decision as a JSON object containing values for \'shouldTag\' and \'confidence\'.' : firstStep ? 'The first question of the reasoning chain.' : `Intermediary reasoning step.`
+                if (firstStep || settings.reasoningSteps.length === 1) {
+                    desc += ' Tag and note data is always prepended to the request. Although placeholders \'{tag}\' and \'{description}\' are also available when \'Number of tags per request\' is \'1\'.';
+                }
                 s.setName(name)
                     .setDesc(desc)
                     .addTextArea(textarea => textarea

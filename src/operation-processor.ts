@@ -12,7 +12,7 @@ export class OperationProcessor {
     // Keep track of which notes are being processed, as we can't store processing status in persistent due to restart issues
     private processingNotes: Array<{
         operationId: string,
-        fileIndex: number
+        stepIndex: number
     }> = [];
 
     constructor(plugin: TagMyNotesPlugin) {
@@ -43,7 +43,8 @@ export class OperationProcessor {
         }
     }
 
-    async createOperation(notes?: { file: TFile; tag: { name: string; description: string; } }[]) {
+    async createOperation(notes?: { file: TFile; }[], tags?: { name: string; description: string; }[]) {
+        const settings = this.plugin.serialized.settings;
         if (!this.plugin.serialized) {
             this.plugin.serialized = {
                 settings: this.plugin.serialized,
@@ -53,21 +54,40 @@ export class OperationProcessor {
         if (!this.plugin.serialized.operations) {
             this.plugin.serialized.operations = [];
         }
-
-        if (!notes) {
-            return
+        if (!notes || !tags) {
+            return;
         }
 
-        const { tagDescriptions, ...settingsWithoutDescriptions } = this.plugin.serialized.settings;
+        const maxTagsPerRequest = settings.tagsPerRequest;
+        const tagBreakdown: number[][] = [];
+        if (maxTagsPerRequest == 0) {
+            tagBreakdown.push([...Array(tags.length).keys()]);
+        } else {
+            for (let i = 0; i < tags.length; i += maxTagsPerRequest) {
+                const end = Math.min(i + maxTagsPerRequest, tags.length);
+                tagBreakdown.push([...Array(end - i).keys()].map(k => i + k));
+            }
+        }
+
+        const steps: any[] = []
+        notes.forEach(note => {
+            tagBreakdown.forEach(tags => {
+                steps.push({
+                    file: note.file.path,
+                    status: 'queued',
+                    tags: tags,
+                    tagOutcomes: {},
+                    error: '',
+                })
+            });
+        });
+
+        const { tagDescriptions, ...settingsWithoutDescriptions } = settings;
         const operation: TagOperation = {
             id: crypto.randomUUID(),
             status: 'queued',
-            notes: notes.map(step => ({
-                file: step.file.path,
-                status: 'queued',
-                error: '',
-                tag: step.tag
-            })),
+            tags: tags,
+            steps: steps,
             config: {
                 ...settingsWithoutDescriptions,
             },
@@ -95,22 +115,22 @@ export class OperationProcessor {
     }
 
     private async handleOperation(operation: TagOperation) {
-        const nextNote = operation.notes.find((n, i) =>
-            n.status === 'queued' && !this.processingNotes.find(no => no.operationId === operation.id && no.fileIndex === i)
+        const step = operation.steps.find((n, i) =>
+            n.status === 'queued' && !this.processingNotes.find(no => no.operationId === operation.id && no.stepIndex === i)
         );
 
         // No more notes to process
-        if (!nextNote && !this.processingNotes.find(n => n.operationId === operation.id)) {
+        if (!step && !this.processingNotes.find(n => n.operationId === operation.id)) {
             operation.status = 'completed';
             operation.metadata.completedAt = Date.now();
             await this.plugin.savePersistent();
             this.operationEvents.dispatchEvent(new Event('update'));
-            new Notice(`Finished tagging operation`)
+            new Notice(`Finished tagging operation`);
             return;
         }
 
         // Still processing
-        if (!nextNote) {
+        if (!step) {
             return;
         }
 
@@ -121,49 +141,55 @@ export class OperationProcessor {
             this.operationEvents.dispatchEvent(new Event('update'));
         }
 
-        const noteIndex = operation.notes.indexOf(nextNote);
-        const noteLock = { operationId: operation.id, fileIndex: noteIndex };
-
-        this.processingNotes.push(noteLock)
+        const stepIndex = operation.steps.indexOf(step);
+        const noteLock = { operationId: operation.id, stepIndex: stepIndex };
+        this.processingNotes.push(noteLock);
         await this.plugin.savePersistent();
         this.operationEvents.dispatchEvent(new Event('update'));
 
-        const file = this.plugin.app.vault.getAbstractFileByPath(nextNote.file);
+        const file = this.plugin.app.vault.getAbstractFileByPath(step.file);
         if (!file || !(file instanceof TFile)) {
-            nextNote.status = 'failed';
-            nextNote.error = 'File not found';
+            step.status = 'failed';
+            step.error = 'File not found';
             this.processingNotes.remove(noteLock);
             await this.plugin.savePersistent();
             this.operationEvents.dispatchEvent(new Event('update'));
-            new Notice(`File not found: '${nextNote.file}'`);
+            new Notice(`File not found: '${step.file}'`);
             return;
         }
 
         try {
-            const result = await this.aiHandler.evaluateNoteForTag(operation, noteIndex)
-            if (result.confidence >= operation.config.confidenceThreshold) {
-                const alreadyHadTag = await this.plugin.tagUtils.noteHasTag(file, nextNote.tag.name)
-                this.plugin.tagUtils.applyTagToNote(file, nextNote.tag.name, result.shouldTag)
-                nextNote.status = 'no-change';
-                if (alreadyHadTag && !result.shouldTag) {
-                    nextNote.status = 'removed-tag'
-                    new Notice(`Removed ${nextNote.tag.name} from ${nextNote.file}`)
-                } else if (!alreadyHadTag && result.shouldTag) {
-                    nextNote.status = 'applied-tag'
-                    new Notice(`Applied ${nextNote.tag.name} to ${nextNote.file}`)
+            const results = await this.aiHandler.evaluateNote(operation, stepIndex);
+            for (let i = 0; i < results.length; i++) {
+                const result = results[i];
+                const tagName = result.tagName;
+
+                if (result.confidence >= operation.config.confidenceThreshold) {
+                    const alreadyHadTag = await this.plugin.tagUtils.noteHasTag(file, tagName);
+                    this.plugin.tagUtils.applyTagToNote(file, tagName, result.shouldTag);
+                    if (alreadyHadTag && !result.shouldTag) {
+                        step.tagOutcomes[tagName] = 'removed-tag';
+                        new Notice(`Removed ${tagName} from ${step.file}`);
+                    } else if (!alreadyHadTag && result.shouldTag) {
+                        step.tagOutcomes[tagName] = 'applied-tag';
+                        new Notice(`Applied ${tagName} to ${step.file}`);
+                    } else {
+                        step.tagOutcomes[tagName] = 'no-change';
+                    }
+                } else {
+                    step.tagOutcomes[tagName] = 'skipped';
                 }
-            } else {
-                nextNote.status = 'skipped'
             }
+
+            step.status = 'done';
         } catch (e) {
-            new Notice(`Error processing '${nextNote.file}' for tag '${nextNote.tag.name}'`)
-            console.error(`Error processing '${nextNote.file}' for tag '${nextNote.tag.name}'`, e)
-            nextNote.status = 'failed';
-            nextNote.error = e;
+            new Notice(`Error processing '${step.file}'`);
+            console.error(`Error processing '${step.file}'`, e);
+            step.status = 'failed';
+            step.error = e;
         }
 
-        this.processingNotes.remove(noteLock)
-
+        this.processingNotes.remove(noteLock);
         await this.plugin.savePersistent();
         this.operationEvents.dispatchEvent(new Event('update'));
     }

@@ -19,6 +19,7 @@ export interface Settings {
         maxContentLength: number;
         truncationStrategy: 'beginning' | 'end';
     };
+    tagsPerRequest: number,
     aiProvider: 'vercel_gateway' | 'ollama' | 'openai' | 'open_router' | 'mistral'
     openaiSettings: {
         baseUrl: string,
@@ -51,14 +52,16 @@ export interface Settings {
 export interface TagOperation {
     id: string;
     status: 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
-    notes: Array<{
+    tags: Array<{
+        name: string;
+        description: string;
+    }>;
+    steps: Array<{
         file: string;
-        status: 'queued' | 'skipped' | 'no-change' | 'applied-tag' | 'removed-tag' | 'failed';
+        status: 'queued' | 'done' | 'failed';
+        tags: Array<number>;
+        tagOutcomes: Partial<Record<string, 'skipped' | 'no-change' | 'applied-tag' | 'removed-tag' | 'failed'>>;
         error: any;
-        tag: {
-            name: string;
-            description: string;
-        }
     }>;
     config: Omit<Settings, 'tagDescriptions'>;
     metadata: {

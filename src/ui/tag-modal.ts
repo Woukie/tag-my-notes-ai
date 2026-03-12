@@ -176,55 +176,33 @@ export class TagModal extends Modal {
         try {
             const strategy = this.noteStrategyDropdown?.getValue();
             if (strategy == 'all_notes') {
-                const allNotes = this.plugin.tagUtils.getAllNotes();
-                const notes = [];
-                for (const note of allNotes) {
-                    for (const tag of selectedTagObjects) {
-                        notes.push({ file: note, tag: tag });
-                    }
-                }
-
-                await this.plugin.operationProcessor.createOperation(notes);
-
+                const notes = this.plugin.tagUtils.getAllNotes().map(note => ({ file: note }));
+                await this.plugin.operationProcessor.createOperation(notes, selectedTagObjects);
                 new Notice(`Started tagging operation for all notes`);
-
             } else if (strategy == 'select_folder') {
                 const folder = this.app.vault.getAbstractFileByPath(this.folderSelected);
                 if (!(folder instanceof TFolder)) {
-                    new Notice("Folder is no longer valid")
+                    new Notice("Folder is no longer valid");
                     return;
                 }
-                const files = this.plugin.tagUtils.getAllNotesInFolder(folder);
-                const notes = []
-                for (const note of files) {
-                    for (const tag of selectedTagObjects) {
-                        notes.push({ file: note, tag: tag });
-                    }
-                }
-
-                await this.plugin.operationProcessor.createOperation(notes);
-
+                const notes = this.plugin.tagUtils.getAllNotesInFolder(folder).map(note => ({ file: note }));
+                await this.plugin.operationProcessor.createOperation(notes, selectedTagObjects);
                 new Notice(`Started tagging operation for all notes in '${folder.path}'`);
             } else if (strategy == 'this_note') {
                 const activeFile = this.app.workspace.getActiveFile();
-
                 if (!activeFile) {
                     new Notice('No file currently open');
                     (this.startButton as any).disabled = false;
                     this.updateStartButton();
                     return;
                 }
-
                 if (activeFile.extension !== 'md') {
                     new Notice('Active file is not a markdown note');
                     (this.startButton as any).disabled = false;
                     this.updateStartButton();
                     return;
                 }
-
-                const notes = selectedTagObjects.map(tag => ({ file: activeFile, tag: tag }));
-                await this.plugin.operationProcessor.createOperation(notes);
-
+                await this.plugin.operationProcessor.createOperation([{ file: activeFile }], selectedTagObjects);
                 new Notice(`Started tagging operation for ${activeFile.name}`);
             }
         } catch (error) {
@@ -277,10 +255,13 @@ export class TagModal extends Modal {
         details.addEventListener('toggle', toggleHandler);
         this.refreshEventListeners.push({ element: details, name: 'toggle', event: toggleHandler });
 
-        const tagCount = operation.notes.map(n => n.tag.name + '|' + n.tag.description).unique().length;
-        const noteCount = operation.notes.map(n => n.file).unique().length;
+        const tagCount = operation.tags.length;
+        const noteCount = operation.steps.map(s => s.file).unique().length;
+        const stepCount = operation.steps.length;
+        const doneCount = operation.steps.filter(s => s.status !== 'queued').length;
+
         details.createEl('summary', {
-            text: `${tagCount} tag${tagCount == 1 ? '' : 's'} for ${noteCount} note${noteCount == 1 ? '' : 's'} | ${operation.notes.filter(n => n.status !== 'queued').length}/${operation.notes.length}`
+            text: `${tagCount} tag${tagCount === 1 ? '' : 's'} for ${noteCount} note${noteCount === 1 ? '' : 's'} | ${doneCount}/${stepCount}`
         });
 
         const rightContainer = container.createDiv({ cls: 'tag-operation-item-right-container' });
@@ -297,17 +278,23 @@ export class TagModal extends Modal {
         }
 
         const list = details.createEl('ul', { cls: 'tag-operation-item-details-list' });
+
         list.createEl('li', { text: `Created: ${new Date(operation.metadata.createdAt).toLocaleString()}` });
         if (operation.metadata.startedAt) list.createEl('li', { text: `Started: ${new Date(operation.metadata.startedAt).toLocaleString()}` });
         if (operation.metadata.completedAt) list.createEl('li', { text: `Completed: ${new Date(operation.metadata.completedAt).toLocaleString()}` });
-        list.createEl('li', { text: `Failed: ${operation.notes.filter(n => n.status === 'failed').length}` });
-        list.createEl('li', { text: `Skipped: ${operation.notes.filter(n => n.status === 'skipped').length}` });
-        list.createEl('li', { text: `No change: ${operation.notes.filter(n => n.status === 'no-change').length}` });
-        list.createEl('li', { text: `Applied: ${operation.notes.filter(n => n.status === 'applied-tag').length}` });
-        list.createEl('li', { text: `Removed: ${operation.notes.filter(n => n.status === 'removed-tag').length}` });
+
+        const stepStatus = new Map<String, number>();
+        operation.steps.forEach(step => {
+            stepStatus.set(step.status, (stepStatus.get(step.status) ?? 0) + 1);
+        });
+
+        stepStatus.forEach((count, status) => {
+            const prettyStatus = status.charAt(0).toUpperCase() + status.slice(1);
+            list.createEl('li', { text: `${prettyStatus}: ${count}` });
+        })
+
         const jsonLi = list.createEl('li')
         const jsonDetails = jsonLi.createEl('details');
-
         const configToggleHandler = () => {
             if (jsonDetails.open) {
                 this.configJSONItemsOpen.push(operation.id);
@@ -317,7 +304,6 @@ export class TagModal extends Modal {
         };
         jsonDetails.addEventListener('toggle', configToggleHandler);
         this.refreshEventListeners.push({ element: jsonDetails, event: configToggleHandler, name: 'toggle' });
-
         jsonDetails.createEl('summary', { text: 'JSON Config' });
         jsonDetails.open = configOpen;
         jsonDetails.createEl('code', { text: JSON.stringify(operation.config, null, 2), cls: 'tag-operation-item-code' });

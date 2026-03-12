@@ -2,13 +2,14 @@ import { TFile } from 'obsidian';
 import TagMyNotesPlugin from './main';
 import { TagOperation } from './types';
 import { createGateway, generateText, LanguageModel, ModelMessage, Output } from 'ai';
-import { createOllama, ollama } from 'ollama-ai-provider-v2';
+import { createOllama } from 'ollama-ai-provider-v2';
 import { z } from 'zod';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { createMistral } from '@ai-sdk/mistral';
 
 export interface TagDecision {
+    tagName: string;
     shouldTag: boolean;
     confidence: number;
 }
@@ -20,17 +21,17 @@ export class AIHandler {
         this.plugin = plugin;
     }
 
-    async evaluateNoteForTag(
+    async evaluateNote(
         operation: TagOperation,
-        noteIndex: number
-    ): Promise<TagDecision> {
+        stepIndex: number
+    ): Promise<TagDecision[]> {
         const steps = operation.config.reasoningSteps;
-        const note = operation.notes[noteIndex];
-        if (!note) throw new Error(`Invalid note at ${noteIndex}`);
-        const file = this.plugin.app.vault.getAbstractFileByPath(note.file);
+        const step = operation.steps[stepIndex];
+        if (!step) throw new Error(`Invalid note at ${stepIndex}`);
+        const file = this.plugin.app.vault.getAbstractFileByPath(step.file);
 
         if (!file || !(file instanceof TFile)) {
-            throw new Error(`Cannot read file: ${note.file}`);
+            throw new Error(`Cannot read file: ${step.file}`);
         }
 
         const content = await this.plugin.app.vault.read(file);
@@ -48,9 +49,15 @@ export class AIHandler {
             }
         }
 
+        const tagDescriptions = step.tags.map(index => operation.tags[index]);
+
+        const tagsBlock = tagDescriptions
+            .map(t => `- ${t.name}: ${t.description}`)
+            .join('\n');
+
         const messages: ModelMessage[] = [{
             role: 'user',
-            content: `Filename: ${file?.name}\n\nContent: ${content}`
+            content: `Filename: ${file.name}\n\nContent: ${processedContent}\n\nTags to evaluate: ${tagsBlock}`
         }];
 
         const model = this.getModel(operation);
@@ -60,8 +67,14 @@ export class AIHandler {
             const lastStep = i === steps.length - 1;
 
             const stepPrompt = step.prompt
-                .replace(/{tag}/g, note.tag.name)
-                .replace(/{description}/g, note.tag.description);
+            if (operation.config.tagsPerRequest === 1) {
+                stepPrompt
+                    .replace(/{tag}/g, operation.tags[0].name)
+                    .replace(/{description}/g, operation.tags[0].description);
+            } else {
+                stepPrompt
+                    .replace(/{tags}/g, tagsBlock);
+            }
 
             messages.push({
                 role: 'user',
@@ -129,19 +142,26 @@ export class AIHandler {
         }
     }
 
-    private async handleLastStep(operation: TagOperation, messages: ModelMessage[]): Promise<TagDecision> {
-        const gateway = createGateway({
-            apiKey: operation.config.gatewaySettings.apiKey,
-        });
-        const model = gateway(operation.config.gatewaySettings.modelId);
+    private async handleLastStep(operation: TagOperation, messages: ModelMessage[]): Promise<TagDecision[]> {
+        const model = this.getModel(operation);
+        const step = operation.steps.last();
+        if (!step) throw new Error('No operation steps');
+        const tags = step.tags.map(index => operation.tags[index]);
 
+        const decisionSchema = z.object({
+            shouldTag: z.boolean().describe(operation.config.shouldTagDescription),
+            confidence: z.number().describe(operation.config.confidenceDescription).max(1).min(0),
+        });
+
+        const tagSchema = Object.fromEntries(
+            tags.map(t => [t.name, decisionSchema])
+        );
 
         const { output } = await generateText({
             model: model,
             output: Output.object({
                 schema: z.object({
-                    shouldTag: z.boolean().describe(operation.config.shouldTagDescription),
-                    confidence: z.number().describe(operation.config.confidenceDescription).max(1).min(0),
+                    tags: z.object(tagSchema)
                 }),
             }),
             messages: messages,
@@ -153,6 +173,8 @@ export class AIHandler {
             throw new Error("No response from AI");
         }
 
-        return output;
+        return Object.entries(output.tags).map(([name, decision]) =>
+            ({ ...decision, tagName: name }) as TagDecision
+        );
     }
 }

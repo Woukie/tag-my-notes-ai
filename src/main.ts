@@ -19,6 +19,7 @@ export default class TagMyNotesPlugin extends Plugin {
         });
 
         this.registerQuickButtons();
+        this.registerQuickCommands();
 
         this.addSettingTab(new SettingsTab(this.app, this));
 
@@ -26,11 +27,45 @@ export default class TagMyNotesPlugin extends Plugin {
     }
 
     async loadPersistent() {
-        this.serialized = Object.assign({}, { settings: DEFAULT_SETTINGS, operations: [] }, await this.loadData())
+        const loaded = await this.loadData();
+
+        this.serialized = {
+            settings: {
+                ...DEFAULT_SETTINGS,
+                ...(loaded?.settings ?? {})
+            },
+            operations: loaded?.operations ?? []
+        };
     }
+
 
     async savePersistent() {
         await this.saveData(this.serialized);
+    }
+
+    private registerQuickCommands() {
+        this.addCommand({
+            id: 'tag-active-note',
+            name: 'Quick-tag active note',
+            callback: async () => {
+                const file = this.app.workspace.getActiveFile();
+                if (!file) return;
+
+                const notes = [{ file }];
+                const tags = this.serialized.settings.tagDescriptions;
+
+                new Notice(`Started tagging operation for '${file.name}' with all tags`);
+                await this.operationProcessor.createOperation(notes, tags);
+            }
+        });
+
+        this.addCommand({
+            id: 'open-tagging-menu',
+            name: 'Open \'Tag My Notes\' menu',
+            callback: () => {
+                new TagModal(this.app, this).open();
+            }
+        });
     }
 
     private registerQuickButtons() {
@@ -41,15 +76,19 @@ export default class TagMyNotesPlugin extends Plugin {
                 if (!(file instanceof TFile)) return;
                 if (file.extension === 'md') {
                     menu.addItem((item) => {
-                        item.setTitle('Apply all tags to note')
+                        item.setTitle('Quick-tag this note')
                             .setSection('Tag my notes')
                             .setIcon('tag')
                             .onClick(async () => {
-                                new Notice(`Started tagging operation for '${file.name}' with all tags`)
-                                const notes = this.serialized.settings.tagDescriptions.map(tag => ({ file, tag }));
-                                await this.operationProcessor.createOperation(notes);
+                                new Notice(`Started tagging operation for '${file.name}' with all tags`);
+
+                                const notes = [{ file }];
+                                const tags = this.serialized.settings.tagDescriptions;
+
+                                await this.operationProcessor.createOperation(notes, tags);
                             });
                     });
+
                 }
             })
         );
@@ -60,13 +99,16 @@ export default class TagMyNotesPlugin extends Plugin {
                 if (source !== "file-explorer-context-menu" || !(file instanceof TFile)) return;
                 if (file.extension === 'md') {
                     menu.addItem((item) => {
-                        item.setTitle('Apply all tags to note')
+                        item.setTitle('Quick-tag this note')
                             .setSection('Tag my notes')
                             .setIcon('tag')
                             .onClick(async () => {
-                                new Notice(`Started tagging operation for '${file.name}' with all tags`)
-                                const notes = this.serialized.settings.tagDescriptions.map(tag => ({ file, tag }));
-                                await this.operationProcessor.createOperation(notes);
+                                new Notice(`Started tagging operation for '${file.name}' with all tags`);
+
+                                const notes = [{ file }];
+                                const tags = this.serialized.settings.tagDescriptions;
+
+                                await this.operationProcessor.createOperation(notes, tags);
                             });
                     });
                 }
@@ -75,25 +117,28 @@ export default class TagMyNotesPlugin extends Plugin {
 
         // Quick tag folder
         this.registerEvent(
-            this.app.workspace.on('file-menu', (menu, folder, source) => {
-                if (source !== "file-explorer-context-menu" || !(folder instanceof TFolder)) return;
+            this.app.workspace.on('file-menu', (menu, file, source) => {
+                if (source !== "file-explorer-context-menu" || !(file instanceof TFile)) return;
+                if (file.extension !== 'md') return;
+
+                const parentFolder = file.parent;
+                if (!(parentFolder instanceof TFolder)) return;
+
                 menu.addItem((item) => {
-                    item.setTitle(`Tags all notes in '${folder.name == '' ? '/' : folder.name}'`)
+                    item.setTitle(`Quick-tag notes in '${parentFolder.name || '/'}'`)
                         .setSection('Tag my notes')
                         .setIcon('tags')
                         .onClick(async () => {
-                            const files = this.tagUtils.getAllNotesInFolder(folder);
-                            new Notice(`Started tagging operation for '${folder.name}' with all tags`)
-                            const notes = []
-                            for (const note of files) {
-                                for (const tag of this.serialized.settings.tagDescriptions) {
-                                    notes.push({ file: note, tag: tag });
-                                }
-                            }
-                            await this.operationProcessor.createOperation(notes);
+                            const files = this.tagUtils.getAllNotesInFolder(parentFolder);
+                            new Notice(`Started tagging operation for folder '${parentFolder.name}' with all tags`);
+
+                            const notes = files.map(file => ({ file }));
+                            const tags = this.serialized.settings.tagDescriptions;
+
+                            await this.operationProcessor.createOperation(notes, tags);
                         });
                 });
             })
-        )
+        );
     }
 }

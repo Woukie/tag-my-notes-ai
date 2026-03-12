@@ -17,6 +17,7 @@ Tag description: {description}`
         maxContentLength: 3000,
         truncationStrategy: 'beginning',
     },
+    tagsPerRequest: 1,
     aiProvider: 'vercel_gateway',
     openaiSettings: {
         baseUrl: '',
