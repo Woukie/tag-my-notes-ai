@@ -147,3 +147,9 @@
 .tag-operation-item-status {
     margin-right: var(--size-4-2);
 }
+
+.tag-operation-step-summary {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

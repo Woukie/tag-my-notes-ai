@@ -15,7 +15,9 @@ export class TagModal extends Modal {
     noteStrategyDropdown: DropdownComponent | undefined;
     tagDropdown: MultiDropdownComponent | undefined;
     operationItemsOpen: Array<string> = [];
+    stepItemsOpen: Array<string> = [];
     configJSONItemsOpen: Array<string> = [];
+    stepsItemsOpen: Array<{ operation: string, step: number }> = [];
     folderSelected: string = '/';
     refreshEventListeners: { element: HTMLDetailsElement, name: string, event: any }[] = [];
 
@@ -240,6 +242,7 @@ export class TagModal extends Modal {
     private operationItem(operation: TagOperation) {
         const open = this.operationItemsOpen.contains(operation.id);
         const configOpen = this.configJSONItemsOpen.contains(operation.id);
+        const stepsOpen = this.stepItemsOpen.contains(operation.id);
         if (!this.operationsContainer) return;
         const container = this.operationsContainer.createDiv({ cls: 'tag-operation-item-container' });
         const details = container.createEl('details', { cls: 'tag-operation-item-details' });
@@ -292,6 +295,47 @@ export class TagModal extends Modal {
             const prettyStatus = status.charAt(0).toUpperCase() + status.slice(1);
             list.createEl('li', { text: `${prettyStatus}: ${count}` });
         })
+
+        const stepsLi = list.createEl('li');
+        const stepsDetails = stepsLi.createEl('details');
+        const stepsToggleHandler = () => {
+            if (stepsDetails.open) {
+                this.stepItemsOpen.push(operation.id);
+            } else {
+                this.stepItemsOpen.remove(operation.id);
+            }
+        };
+        stepsDetails.addEventListener('toggle', stepsToggleHandler);
+        this.refreshEventListeners.push({ element: stepsDetails, event: stepsToggleHandler, name: 'toggle' });
+        stepsDetails.createEl('summary', { text: 'Steps' });
+        stepsDetails.open = stepsOpen;
+        const stepList = stepsDetails.createEl('ul');
+
+        operation.steps.forEach((step, i) => {
+            const stepOpen = this.stepsItemsOpen.some(s => s.operation === operation.id && s.step === i);
+            const stepLi = stepList.createEl('li');
+            const stepDetails = stepLi.createEl('details');
+            stepDetails.createEl('summary', { text: `${step.status} | ${step.file}`, cls: 'tag-operation-step-summary' });
+            stepDetails.open = stepOpen;
+            const stepToggleHandler = () => {
+                if (stepDetails.open) {
+                    this.stepsItemsOpen.push({ operation: operation.id, step: i });
+                } else {
+                    this.stepsItemsOpen = this.stepsItemsOpen.filter(
+                        s => !(s.operation === operation.id && s.step === i)
+                    );
+                }
+            };
+            stepDetails.addEventListener('toggle', stepToggleHandler);
+            this.refreshEventListeners.push({ element: stepDetails, event: stepToggleHandler, name: 'toggle' });
+
+            const stepInfoList = stepDetails.createEl('ul');
+            if (step.error !== '') stepInfoList.createEl('li', { text: `Error: ${step.error}` });
+            step.tags.forEach(tagId => {
+                const tag = operation.tags[tagId];
+                stepInfoList.createEl('li', { text: `${tag.name}: ${step.tagOutcomes[tag.name] ?? 'no-outcome-yet'}` });
+            });
+        });
 
         const jsonLi = list.createEl('li')
         const jsonDetails = jsonLi.createEl('details');
