@@ -1,7 +1,7 @@
 {
 	"name": "tag-my-notes-ai",
 	"description": "Tag notes with your chosen AI model, control which notes and tags to use, and modify the model's thought process to your liking.",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"type": "module",
 	"scripts": {
 		"build": "node build.mjs"
