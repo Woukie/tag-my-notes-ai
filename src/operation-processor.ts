@@ -162,7 +162,7 @@ export class OperationProcessor {
             const results = await this.aiHandler.evaluateNote(operation, stepIndex);
             for (let i = 0; i < results.length; i++) {
                 const result = results[i];
-                const tagName = result.tagName;
+                const tagName = operation.tags[result.tagIndex].name;
 
                 if (result.confidence >= operation.config.confidenceThreshold) {
                     const alreadyHadTag = await this.plugin.tagUtils.noteHasTag(file, tagName);

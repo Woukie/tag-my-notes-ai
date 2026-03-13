@@ -9,7 +9,7 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { createMistral } from '@ai-sdk/mistral';
 
 export interface TagDecision {
-    tagName: string;
+    tagIndex: number;
     shouldTag: boolean;
     confidence: number;
 }
@@ -25,7 +25,7 @@ export class AIHandler {
         operation: TagOperation,
         stepIndex: number
     ): Promise<TagDecision[]> {
-        const steps = operation.config.reasoningSteps;
+        const reasoningSteps = operation.config.reasoningSteps;
         const step = operation.steps[stepIndex];
         if (!step) throw new Error(`Invalid note at ${stepIndex}`);
         const file = this.plugin.app.vault.getAbstractFileByPath(step.file);
@@ -62,9 +62,9 @@ export class AIHandler {
 
         const model = this.getModel(operation);
 
-        for (let i = 0; i < steps.length; i++) {
-            const step = steps[i];
-            const lastStep = i === steps.length - 1;
+        for (let i = 0; i < reasoningSteps.length; i++) {
+            const step = reasoningSteps[i];
+            const lastStep = i === reasoningSteps.length - 1;
 
             const stepPrompt = step.prompt
             if (operation.config.tagsPerRequest === 1) {
@@ -82,7 +82,6 @@ export class AIHandler {
             });
 
             if (!lastStep) {
-
                 const { text } = await generateText({
                     model: model,
                     messages: messages,
@@ -95,7 +94,7 @@ export class AIHandler {
                     content: text || ''
                 });
             } else {
-                return this.handleLastStep(operation, messages)
+                return this.handleDecisionQuery(stepIndex, operation, messages)
             }
         }
 
@@ -142,9 +141,9 @@ export class AIHandler {
         }
     }
 
-    private async handleLastStep(operation: TagOperation, messages: ModelMessage[]): Promise<TagDecision[]> {
+    private async handleDecisionQuery(stepIndex: number, operation: TagOperation, messages: ModelMessage[]): Promise<TagDecision[]> {
         const model = this.getModel(operation);
-        const step = operation.steps.last();
+        const step = operation.steps[stepIndex];
         if (!step) throw new Error('No operation steps');
         const tags = step.tags.map(index => operation.tags[index]);
 
@@ -174,7 +173,7 @@ export class AIHandler {
         }
 
         return Object.entries(output.tags).map(([name, decision]) =>
-            ({ ...decision, tagName: name }) as TagDecision
+            ({ ...decision, tagIndex: operation.tags.findIndex(t => t.name === name) }) as TagDecision
         );
     }
 }
