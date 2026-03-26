@@ -10,6 +10,19 @@ export class SettingsTab extends PluginSettingTab {
         this.plugin = plugin;
     }
 
+    private redraw(): void {
+        const previousScrollTop = this.containerEl.scrollTop;
+
+        this.display();
+
+        window.requestAnimationFrame(() => {
+            this.containerEl.scrollTop = previousScrollTop;
+            window.setTimeout(() => {
+                this.containerEl.scrollTop = previousScrollTop;
+            }, 0);
+        });
+    }
+
     display(): void {
         const { containerEl } = this;
         const settings = this.plugin.serialized.settings;
@@ -32,7 +45,7 @@ export class SettingsTab extends PluginSettingTab {
                     const v = value as 'vercel_gateway' | 'ollama' | 'openai' | 'open_router' | 'mistral';
                     settings.aiProvider = v;
                     await this.plugin.savePersistent();
-                    this.display();
+                    this.redraw();
                 }))
         );
 
@@ -271,7 +284,7 @@ export class SettingsTab extends PluginSettingTab {
                     const name = `new_tag_${maxNumber + 1}`;
                     settings.tagDescriptions.push({ name, description: '' });
                     this.plugin.savePersistent();
-                    this.display();
+                    this.redraw();
                 }))
         );
 
@@ -293,7 +306,7 @@ export class SettingsTab extends PluginSettingTab {
                         .onClick(async () => {
                             settings.tagDescriptions.splice(id, 1);
                             await this.plugin.savePersistent();
-                            this.display();
+                            this.redraw();
                         })
                     );
 
@@ -328,7 +341,7 @@ export class SettingsTab extends PluginSettingTab {
                 .onClick(() => {
                     settings.reasoningSteps.push({ prompt: '' });
                     this.plugin.savePersistent();
-                    this.display();
+                    this.redraw();
                 }))
         );
 
@@ -359,7 +372,7 @@ export class SettingsTab extends PluginSettingTab {
                                 const steps = settings.reasoningSteps;
                                 [steps[index - 1], steps[index]] = [steps[index], steps[index - 1]];
                                 await this.plugin.savePersistent();
-                                this.display();
+                                this.redraw();
                             }
                         })
                         .setDisabled(index === 0)
@@ -372,7 +385,7 @@ export class SettingsTab extends PluginSettingTab {
                                 const steps = settings.reasoningSteps;
                                 [steps[index], steps[index + 1]] = [steps[index + 1], steps[index]];
                                 await this.plugin.savePersistent();
-                                this.display();
+                                this.redraw();
                             }
                         })
                         .setDisabled(index === settings.reasoningSteps.length - 1)
@@ -384,7 +397,7 @@ export class SettingsTab extends PluginSettingTab {
                         .onClick(async () => {
                             settings.reasoningSteps.splice(index, 1);
                             await this.plugin.savePersistent();
-                            this.display();
+                            this.redraw();
                         })
                     );
 
@@ -403,7 +416,7 @@ export class SettingsTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     settings.contextClamping.enabled = value;
                     await this.plugin.savePersistent();
-                    this.display();
+                    this.redraw();
                 }))
         );
 
@@ -484,7 +497,7 @@ export class SettingsTab extends PluginSettingTab {
                 .onClick(async () => {
                     this.plugin.serialized.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
                     await this.plugin.savePersistent();
-                    this.display();
+                    this.redraw();
                     new Notice('Settings reset to defaults.');
                 }))
         );
