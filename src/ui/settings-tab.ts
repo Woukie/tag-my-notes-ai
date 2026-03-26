@@ -319,6 +319,15 @@ export class SettingsTab extends PluginSettingTab {
         const reasoningGroup = new SettingGroup(containerEl);
         reasoningGroup.setHeading("Reasoning steps");
 
+        reasoningGroup.addSetting(s => {
+            s.setName('Information')
+            s.descEl.createEl('p', { text: 'To decide whether a given tag applies to a note, the AI answers series of reasoning steps defined by you.' })
+            const li = s.descEl.createEl('ul')
+            li.createEl('li', { text: "The response to the final step will be structured, containing the parameters 'shouldTag' and 'confidence', the definitions of which are defined in advanced." })
+            li.createEl('li', { text: "The conversation is preceeded by a context message containing the file name, file content and a list of tag names and descriptions." })
+            li.createEl('li', { text: "If 'Number of tags per request' is set to 1, then the placeholders {tag} and {description} will also be made available." })
+        })
+
         reasoningGroup.addSetting(s => s
             .setName('Add reasoning step')
             .setDesc('Add a new step to the reasoning process.')
@@ -333,12 +342,6 @@ export class SettingsTab extends PluginSettingTab {
         );
 
         settings.reasoningSteps.forEach((step, index) => {
-            reasoningGroup.addSetting(s => {
-                s.setDesc(`To decide whether a given tag applies to a given note, the AI answers a series of questions shown below. 
-                    The response to the final step will be structured, containing the parameters 'shouldTag' and 'confidence', the definitions of which are defined in advanced. 
-                    The conversation is preceeded by a context containing the file name, file content and a list of tag names and descriptions. 
-                    If 'Number of tags per request' is set to 1, then the placeholders {tag} and {description} will also be made available.`)
-            })
             reasoningGroup.addSetting(s => {
                 const finalStep = index === settings.reasoningSteps.length - 1;
                 const firstStep = index === 0;
