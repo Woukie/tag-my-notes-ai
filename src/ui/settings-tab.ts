@@ -251,83 +251,6 @@ export class SettingsTab extends PluginSettingTab {
                 }))
         );
 
-        paramsGroup.addSetting(s => s
-            .setName('Should tag description')
-            .setDesc('Define what the \'shouldTag\' parameter means in the decision step.')
-            .addTextArea(dropdown => dropdown
-                .setValue(settings.shouldTagDescription)
-                .onChange(async (value) => {
-                    settings.shouldTagDescription = value;
-                    await this.plugin.savePersistent();
-                }))
-        );
-
-        paramsGroup.addSetting(s => s
-            .setName('Confidence description')
-            .setDesc('Define what the \'confidence\' parameter means in the decision step.')
-            .addTextArea(dropdown => dropdown
-                .setValue(settings.confidenceDescription)
-                .onChange(async (value) => {
-                    settings.confidenceDescription = value;
-                    await this.plugin.savePersistent();
-                }))
-        );
-
-        paramsGroup.addSetting(s => s
-            .setName('Enable context clamping')
-            .setDesc('Limit the amount of context sent to the AI.')
-            .addToggle(toggle => toggle
-                .setValue(settings.contextClamping.enabled)
-                .onChange(async (value) => {
-                    settings.contextClamping.enabled = value;
-                    await this.plugin.savePersistent();
-                    this.display();
-                }))
-        );
-
-        if (settings.contextClamping.enabled) {
-            paramsGroup.addSetting(s => s
-                .setName('Max content length')
-                .setDesc('Maximum number of characters to send to the AI.')
-                .addText(text => text
-                    .setPlaceholder('3000')
-                    .setValue(String(settings.contextClamping.maxContentLength))
-                    .onChange(async (value) => {
-                        const numValue = parseInt(value);
-                        if (!isNaN(numValue) && numValue > 0) {
-                            settings.contextClamping.maxContentLength = numValue;
-                            await this.plugin.savePersistent();
-                        }
-                    }))
-            );
-
-            paramsGroup.addSetting(s => s
-                .setName('Truncation strategy')
-                .setDesc('Which part of the content to keep when truncating.')
-                .addDropdown(dropdown => dropdown
-                    .addOption('beginning', 'Keep beginning')
-                    .addOption('end', 'Keep end')
-                    .setValue(settings.contextClamping.truncationStrategy)
-                    .onChange(async (value) => {
-                        const v = value as 'beginning' | 'end';
-                        settings.contextClamping.truncationStrategy = v;
-                        await this.plugin.savePersistent();
-                    }))
-            );
-        }
-
-        paramsGroup.addSetting(s => s
-            .setName('Number of tags per request')
-            .setDesc('Max number of tags to process together per request. Set to 0 to process every tag on a note in one request. Remember to tweak the reasoning prompts when changing this to or from \'1\'')
-            .addText(text => text
-                .setValue(settings.tagsPerRequest.toString())
-                .onChange(async value => {
-                    settings.tagsPerRequest = Number.parseInt(value);
-                    await this.plugin.savePersistent();
-                })
-            )
-        );
-
         const tagGroup = new SettingGroup(containerEl);
         tagGroup.setHeading("Tag descriptions");
 
@@ -468,6 +391,86 @@ export class SettingsTab extends PluginSettingTab {
                 return s;
             });
         });
+
+        const advancedPrompt = new SettingGroup(containerEl);
+        advancedPrompt.setHeading("Advanced model parameters")
+
+        advancedPrompt.addSetting(s => s
+            .setName('Enable context clamping')
+            .setDesc('Limit the amount of context sent to the AI about a note.')
+            .addToggle(toggle => toggle
+                .setValue(settings.contextClamping.enabled)
+                .onChange(async (value) => {
+                    settings.contextClamping.enabled = value;
+                    await this.plugin.savePersistent();
+                    this.display();
+                }))
+        );
+
+        if (settings.contextClamping.enabled) {
+            advancedPrompt.addSetting(s => s
+                .setName('Max content length')
+                .setDesc('Maximum number of characters to send to the AI as part of note context.')
+                .addText(text => text
+                    .setPlaceholder('3000')
+                    .setValue(String(settings.contextClamping.maxContentLength))
+                    .onChange(async (value) => {
+                        const numValue = parseInt(value);
+                        if (!isNaN(numValue) && numValue > 0) {
+                            settings.contextClamping.maxContentLength = numValue;
+                            await this.plugin.savePersistent();
+                        }
+                    }))
+            );
+
+            advancedPrompt.addSetting(s => s
+                .setName('Truncation strategy')
+                .setDesc('Which part of the content to keep when truncating.')
+                .addDropdown(dropdown => dropdown
+                    .addOption('beginning', 'Keep beginning')
+                    .addOption('end', 'Keep end')
+                    .setValue(settings.contextClamping.truncationStrategy)
+                    .onChange(async (value) => {
+                        const v = value as 'beginning' | 'end';
+                        settings.contextClamping.truncationStrategy = v;
+                        await this.plugin.savePersistent();
+                    }))
+            );
+        }
+
+        advancedPrompt.addSetting(s => s
+            .setName('Number of tags per request')
+            .setDesc('Max number of tags to process together per request. Set to 0 to process every tag on a note in one request. Remember to tweak the reasoning prompts when changing this to or from \'1\'')
+            .addText(text => text
+                .setValue(settings.tagsPerRequest.toString())
+                .onChange(async value => {
+                    settings.tagsPerRequest = Number.parseInt(value);
+                    await this.plugin.savePersistent();
+                })
+            )
+        );
+
+        advancedPrompt.addSetting(s => s
+            .setName('Final response output parameter \'shouldTag\'')
+            .setDesc('Internal parameter definition used by the AI in the decision step.')
+            .addTextArea(dropdown => dropdown
+                .setValue(settings.shouldTagDescription)
+                .onChange(async (value) => {
+                    settings.shouldTagDescription = value;
+                    await this.plugin.savePersistent();
+                }))
+        );
+
+        advancedPrompt.addSetting(s => s
+            .setName('Final response output parameter \'confidence\'')
+            .setDesc('Internal parameter definition used by the AI in the decision step.')
+            .addTextArea(dropdown => dropdown
+                .setValue(settings.confidenceDescription)
+                .onChange(async (value) => {
+                    settings.confidenceDescription = value;
+                    await this.plugin.savePersistent();
+                }))
+        );
 
         const resetGroup = new SettingGroup(containerEl);
         resetGroup.setHeading("Reset settings");
