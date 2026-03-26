@@ -345,7 +345,7 @@ export class SettingsTab extends PluginSettingTab {
             reasoningGroup.addSetting(s => {
                 const finalStep = index === settings.reasoningSteps.length - 1;
                 const firstStep = index === 0;
-                const name = finalStep ? 'Decision step' : firstStep ? 'Context step' : `Step ${index + 1}`
+                const name = finalStep ? 'Decision step' : `Step ${index + 1}`
                 var desc = finalStep ? 'The reponse to this step is a structured object containing the values of \'shouldTag\' and \'confidence\'.' : firstStep ? 'The first question of the reasoning chain.' : `Intermediary reasoning step.`
                 s.setName(name)
                     .setDesc(desc)
