@@ -251,19 +251,6 @@ export class SettingsTab extends PluginSettingTab {
                 }))
         );
 
-        paramsGroup.addSetting(s => s
-            .setName('Confidence threshold')
-            .setDesc('Minimum confidence score to apply tags (0.0 - 1.0).')
-            .addSlider(slider => slider
-                .setLimits(0, 1, 0.05)
-                .setValue(settings.confidenceThreshold)
-                .setDynamicTooltip()
-                .onChange(async (value) => {
-                    settings.confidenceThreshold = value;
-                    await this.plugin.savePersistent();
-                }))
-        );
-
         const tagGroup = new SettingGroup(containerEl);
         tagGroup.setHeading("Tag descriptions");
 
@@ -347,13 +334,16 @@ export class SettingsTab extends PluginSettingTab {
 
         settings.reasoningSteps.forEach((step, index) => {
             reasoningGroup.addSetting(s => {
+                s.setDesc(`To decide whether a given tag applies to a given note, the AI answers a series of questions shown below. 
+                    The response to the final step will be structured, containing the parameters 'shouldTag' and 'confidence', the definitions of which are defined in advanced. 
+                    The conversation is preceeded by a context containing the file name, file content and a list of tag names and descriptions. 
+                    If 'Number of tags per request' is set to 1, then the placeholders {tag} and {description} will also be made available.`)
+            })
+            reasoningGroup.addSetting(s => {
                 const finalStep = index === settings.reasoningSteps.length - 1;
                 const firstStep = index === 0;
                 const name = finalStep ? 'Decision step' : firstStep ? 'Context step' : `Step ${index + 1}`
-                var desc = finalStep ? 'The reponse to this step will be the decision as a JSON object containing values for \'shouldTag\' and \'confidence\'.' : firstStep ? 'The first question of the reasoning chain.' : `Intermediary reasoning step.`
-                if (firstStep || settings.reasoningSteps.length === 1) {
-                    desc += ' Tag and note data is always prepended to the request. Although placeholders \'{tag}\' and \'{description}\' are also available when \'Number of tags per request\' is \'1\'.';
-                }
+                var desc = finalStep ? 'The reponse to this step is a structured object containing the values of \'shouldTag\' and \'confidence\'.' : firstStep ? 'The first question of the reasoning chain.' : `Intermediary reasoning step.`
                 s.setName(name)
                     .setDesc(desc)
                     .addTextArea(textarea => textarea
@@ -410,7 +400,7 @@ export class SettingsTab extends PluginSettingTab {
 
         advancedPrompt.addSetting(s => s
             .setName('Enable context clamping')
-            .setDesc('Limit the amount of context sent to the AI about a note.')
+            .setDesc('Limit the amount of context sent to the AI about a note. Can save tokens.')
             .addToggle(toggle => toggle
                 .setValue(settings.contextClamping.enabled)
                 .onChange(async (value) => {
@@ -438,7 +428,7 @@ export class SettingsTab extends PluginSettingTab {
 
             advancedPrompt.addSetting(s => s
                 .setName('Truncation strategy')
-                .setDesc('Which part of the content to keep when truncating.')
+                .setDesc('Which part of the note to keep when clamping context.')
                 .addDropdown(dropdown => dropdown
                     .addOption('beginning', 'Keep beginning')
                     .addOption('end', 'Keep end')
@@ -453,7 +443,7 @@ export class SettingsTab extends PluginSettingTab {
 
         advancedPrompt.addSetting(s => s
             .setName('Number of tags per request')
-            .setDesc('Max number of tags to process together per request. Set to 0 to process every tag on a note in one request. Remember to tweak the reasoning prompts when changing this to or from \'1\'')
+            .setDesc('Process multiple tags per request. Removes the {tag} and {description} placeholders in the reasoning steps when not \'1\'. \'0\' processes every tag in one request.')
             .addText(text => text
                 .setValue(settings.tagsPerRequest.toString())
                 .onChange(async value => {
@@ -464,7 +454,7 @@ export class SettingsTab extends PluginSettingTab {
         );
 
         advancedPrompt.addSetting(s => s
-            .setName('Final response output parameter \'shouldTag\'')
+            .setName('Description of output parameter \'shouldTag\'')
             .setDesc('Internal parameter definition used by the AI in the decision step.')
             .addTextArea(dropdown => dropdown
                 .setValue(settings.shouldTagDescription)
@@ -475,12 +465,25 @@ export class SettingsTab extends PluginSettingTab {
         );
 
         advancedPrompt.addSetting(s => s
-            .setName('Final response output parameter \'confidence\'')
+            .setName('Description of output parameter \'confidence\'')
             .setDesc('Internal parameter definition used by the AI in the decision step.')
             .addTextArea(dropdown => dropdown
                 .setValue(settings.confidenceDescription)
                 .onChange(async (value) => {
                     settings.confidenceDescription = value;
+                    await this.plugin.savePersistent();
+                }))
+        );
+
+        advancedPrompt.addSetting(s => s
+            .setName('Confidence threshold')
+            .setDesc('Minimum confidence score given by the final response required to apply or remove a tag (0.0 - 1.0).')
+            .addSlider(slider => slider
+                .setLimits(0, 1, 0.05)
+                .setValue(settings.confidenceThreshold)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    settings.confidenceThreshold = value;
                     await this.plugin.savePersistent();
                 }))
         );
